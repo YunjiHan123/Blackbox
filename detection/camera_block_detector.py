@@ -44,7 +44,7 @@ class CameraBlockDetector:
             if pixel_std < self.min_pixel_std:
                 reasons.append("low_texture")
 
-            if reasons:
+            if len(reasons) >= 2:
                 now = time.time()
                 should_capture = now - self.last_capture_time > self.capture_interval_seconds
 
