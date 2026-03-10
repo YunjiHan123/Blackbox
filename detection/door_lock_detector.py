@@ -41,7 +41,7 @@ class DoorLockDetector:
         roi_height = int(height * self.roi_height_ratio)
         return [roi_x1, roi_y1, roi_x1 + roi_width, roi_y1 + roi_height]
 
-    def analyze(self, frame, poses):
+    def analyze(self, frame, poses, timestamp=None):
 
         roi = self._compute_roi(frame)
         target_wrist = None
@@ -81,7 +81,7 @@ class DoorLockDetector:
             event["frames_in_zone"] = self.wrist_in_zone_frames
             return event
 
-        now = time.time()
+        now = time.time() if timestamp is None else timestamp
         if self.zone_entered_at is None:
             self.zone_entered_at = now
 

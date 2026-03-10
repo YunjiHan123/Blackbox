@@ -21,7 +21,7 @@ class PersonProximityDetector:
         self.start_time = None
         self.last_trigger_time = 0.0
 
-    def analyze(self, frame):
+    def analyze(self, frame, timestamp=None):
 
         results = self.model(frame, verbose=False)
         frame_area = frame.shape[0] * frame.shape[1]
@@ -60,7 +60,7 @@ class PersonProximityDetector:
             self.start_time = None
             return None
 
-        now = time.time()
+        now = time.time() if timestamp is None else timestamp
         if self.start_time is None:
             self.start_time = now
 

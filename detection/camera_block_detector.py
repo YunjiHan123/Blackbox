@@ -21,7 +21,7 @@ class CameraBlockDetector:
         self.prev_gray = None
         self.last_capture_time = 0.0
 
-    def analyze(self, frame):
+    def analyze(self, frame, timestamp=None):
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         event = None
@@ -44,8 +44,8 @@ class CameraBlockDetector:
             if pixel_std < self.min_pixel_std:
                 reasons.append("low_texture")
 
-            if len(reasons) >= 2:
-                now = time.time()
+            if reasons:
+                now = time.time() if timestamp is None else timestamp
                 should_capture = now - self.last_capture_time > self.capture_interval_seconds
 
                 if should_capture:

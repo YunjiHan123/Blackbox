@@ -1,0 +1,60 @@
+{
+  "videos": [
+    {
+      "file": "bat_01.MOV",
+      "expected_warnings": ["weapon_detected"]
+    },
+    {
+      "file": "bat_02.MOV",
+      "expected_warnings": ["weapon_detected"]
+    },
+    {
+      "file": "camera_block_01.MOV",
+      "expected_warnings": ["camera_blocking"]
+    },
+    {
+      "file": "camera_block_02.MOV",
+      "expected_warnings": ["camera_blocking"]
+    },
+    {
+      "file": "door_knock_01.MOV",
+      "expected_warnings": ["door_knock"]
+    },
+    {
+      "file": "door_knock_02.MOV",
+      "expected_warnings": ["door_knock"]
+    },
+    {
+      "file": "door_lock_shake_01.MOV",
+      "expected_warnings": ["shaking_hand_detected"]
+    },
+    {
+      "file": "door_lock_shake_02.MOV",
+      "expected_warnings": ["shaking_hand_detected"]
+    },
+    {
+      "file": "door_lock_try_01.MOV",
+      "expected_warnings": ["door_lock_try_detected"]
+    },
+    {
+      "file": "door_lock_try_02.MOV",
+      "expected_warnings": ["door_lock_try_detected"]
+    },
+    {
+      "file": "head_close_01.MOV",
+      "expected_warnings": ["person_near_camera"]
+    },
+    {
+      "file": "head_close_02.MOV",
+      "expected_warnings": ["person_near_camera"]
+    },
+    {
+      "file": "loitering_01.MOV",
+      "expected_warnings": ["loitering"]
+    },
+    {
+      "file": "loitering_02.MOV",
+      "expected_warnings": ["loitering"]
+    }
+  ]
+}
