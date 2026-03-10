@@ -6,10 +6,15 @@ from config import (
     ALERT_HOLD_SECONDS,
     ALERT_TEXT_COLOR,
     ALERT_WINDOW_NAME,
+    ALERT_WINDOW_GAP,
     CAMERA_INDEX,
     DELETE_OUTPUTS_ON_EXIT,
     FRAME_HEIGHT,
     FRAME_WIDTH,
+    MAIN_WINDOW_HEIGHT,
+    MAIN_WINDOW_WIDTH,
+    MAIN_WINDOW_X,
+    MAIN_WINDOW_Y,
     POSE_MODEL_PATH,
     POSE_COLOR,
     POSE_CONNECTIONS,
@@ -65,7 +70,8 @@ def main():
     )
 
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WINDOW_NAME, 540, 960)
+    cv2.resizeWindow(WINDOW_NAME, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT)
+    cv2.moveWindow(WINDOW_NAME, MAIN_WINDOW_X, MAIN_WINDOW_Y)
     alert_until = 0.0
     alert_frame = None
 
@@ -108,7 +114,12 @@ def main():
                 ALERT_TEXT_COLOR,
             )
             cv2.namedWindow(ALERT_WINDOW_NAME, cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(ALERT_WINDOW_NAME, 540, 960)
+            cv2.resizeWindow(ALERT_WINDOW_NAME, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT)
+            cv2.moveWindow(
+                ALERT_WINDOW_NAME,
+                MAIN_WINDOW_X + MAIN_WINDOW_WIDTH + ALERT_WINDOW_GAP,
+                MAIN_WINDOW_Y,
+            )
 
         draw_status(
             frame,
