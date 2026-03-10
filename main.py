@@ -16,10 +16,9 @@ from config import (
     DELETE_OUTPUTS_ON_EXIT,
     DOOR_LOCK_COOLDOWN_SECONDS,
     DOOR_LOCK_DECAY_FRAMES,
-    DOOR_LOCK_FPS_HINT,
     DOOR_LOCK_MOVEMENT_DELTA_THRESHOLD,
     DOOR_LOCK_MOVEMENT_HISTORY_SIZE,
-    DOOR_LOCK_REQUIRED_FRAMES,
+    DOOR_LOCK_REQUIRED_SECONDS,
     DOOR_LOCK_ROI_HEIGHT_RATIO,
     DOOR_LOCK_ROI_WIDTH_RATIO,
     DOOR_LOCK_ROI_X_RATIO,
@@ -113,12 +112,11 @@ def main():
         roi_width_ratio=DOOR_LOCK_ROI_WIDTH_RATIO,
         roi_height_ratio=DOOR_LOCK_ROI_HEIGHT_RATIO,
         wrist_confidence_threshold=DOOR_LOCK_WRIST_CONFIDENCE_THRESHOLD,
-        required_frames=DOOR_LOCK_REQUIRED_FRAMES,
+        required_seconds=DOOR_LOCK_REQUIRED_SECONDS,
         movement_history_size=DOOR_LOCK_MOVEMENT_HISTORY_SIZE,
         decay_frames=DOOR_LOCK_DECAY_FRAMES,
         movement_delta_threshold=DOOR_LOCK_MOVEMENT_DELTA_THRESHOLD,
         cooldown_seconds=DOOR_LOCK_COOLDOWN_SECONDS,
-        fps_hint=DOOR_LOCK_FPS_HINT,
     )
     logger = Logger()
     saver = FrameSaver()
