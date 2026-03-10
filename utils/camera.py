@@ -3,12 +3,13 @@ import cv2
 
 class CameraStream:
 
-    def __init__(self, camera_index, frame_width, frame_height, rotation=None):
+    def __init__(self, camera_index, frame_width, frame_height, rotation=None, buffer_size=None):
 
         self.camera_index = camera_index
         self.frame_width = frame_width
         self.frame_height = frame_height
         self.rotation = rotation
+        self.buffer_size = buffer_size
         self.cap = None
 
     def open(self):
@@ -16,6 +17,8 @@ class CameraStream:
         cap = cv2.VideoCapture(self.camera_index)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
+        if self.buffer_size is not None:
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, self.buffer_size)
 
         if not cap.isOpened():
             cap.release()

@@ -1,5 +1,4 @@
 import cv2
-import time
 
 from config import (
     ALERT_BANNER_COLOR,
@@ -8,6 +7,11 @@ from config import (
     ALERT_WINDOW_NAME,
     ALERT_WINDOW_GAP,
     CAMERA_INDEX,
+    CAMERA_BLOCK_CAPTURE_INTERVAL_SECONDS,
+    CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
+    CAMERA_BLOCK_MIN_BRIGHTNESS,
+    CAMERA_BLOCK_MIN_PIXEL_STD,
+    CAMERA_BUFFER_SIZE,
     DELETE_OUTPUTS_ON_EXIT,
     FRAME_HEIGHT,
     FRAME_WIDTH,
@@ -27,26 +31,55 @@ from config import (
     WEAPON_LABELS,
     WINDOW_NAME,
 )
+from detection.camera_block_detector import CameraBlockDetector
 from detection.pose_detector import PoseDetector
 from detection.weapon_detector import WeaponDetector
+from utils.alert_state import AlertState
 from utils.camera import CameraStream, resize_to_window
 from utils.detection_gate import DetectionGate
 from utils.frame_saver import FrameSaver
 from utils.logger import Logger
 from utils.visualization import (
-    draw_alert_banner,
     draw_detection,
     draw_pose,
     draw_status,
 )
 
 
+def ensure_alert_window():
+
+    cv2.namedWindow(ALERT_WINDOW_NAME, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(ALERT_WINDOW_NAME, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT)
+    cv2.moveWindow(
+        ALERT_WINDOW_NAME,
+        MAIN_WINDOW_X + MAIN_WINDOW_WIDTH + ALERT_WINDOW_GAP,
+        MAIN_WINDOW_Y,
+    )
+
+
+def destroy_window_if_exists(window_name):
+
+    try:
+        cv2.getWindowImageRect(window_name)
+    except cv2.error:
+        return
+
+    cv2.destroyWindow(window_name)
+
+
 def main():
 
     weapon_detector = WeaponDetector(WEAPON_MODEL_PATH, allowed_labels=WEAPON_LABELS)
     pose_detector = PoseDetector(POSE_MODEL_PATH)
+    camera_block_detector = CameraBlockDetector(
+        change_ratio_threshold=CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
+        min_brightness=CAMERA_BLOCK_MIN_BRIGHTNESS,
+        min_pixel_std=CAMERA_BLOCK_MIN_PIXEL_STD,
+        capture_interval_seconds=CAMERA_BLOCK_CAPTURE_INTERVAL_SECONDS,
+    )
     logger = Logger()
     saver = FrameSaver()
+    alert_state = AlertState(ALERT_HOLD_SECONDS, ALERT_BANNER_COLOR, ALERT_TEXT_COLOR)
     gate = DetectionGate(
         min_confidence=0.45,
         window_size=5,
@@ -58,6 +91,7 @@ def main():
         frame_width=FRAME_WIDTH,
         frame_height=FRAME_HEIGHT,
         rotation=PORTRAIT_ROTATION,
+        buffer_size=CAMERA_BUFFER_SIZE,
     )
 
     if camera.open() is None:
@@ -72,9 +106,6 @@ def main():
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT)
     cv2.moveWindow(WINDOW_NAME, MAIN_WINDOW_X, MAIN_WINDOW_Y)
-    alert_until = 0.0
-    alert_frame = None
-
     while True:
 
         ret, frame = camera.read()
@@ -85,6 +116,7 @@ def main():
 
         weapon_detections = weapon_detector.detect(frame)
         poses = pose_detector.detect(frame)
+        block_event = camera_block_detector.analyze(frame)
 
         for pose in poses:
             draw_pose(
@@ -99,27 +131,35 @@ def main():
         for detection in weapon_detections:
             draw_detection(frame, detection, WEAPON_COLOR)
 
+        if block_event is not None:
+            alert_state.draw_inline_warning(frame, "WARNING: Camera Blocking Attempt!")
+
+            if block_event["should_capture"]:
+                logger.log(
+                    "camera blocking detected "
+                    f"(brightness={block_event['metrics']['brightness']:.1f}, "
+                    f"pixel_std={block_event['metrics']['pixel_std']:.1f}, "
+                    f"change_ratio={block_event['metrics']['change_ratio']:.2f})"
+                )
+                saver.save(frame, "camera_blocking")
+                alert_state.activate(
+                    frame,
+                    "ALERT  CAMERA BLOCKING",
+                    "Camera blocking attempt detected",
+                )
+                ensure_alert_window()
+
         for detection in gate.update(weapon_detections):
             label = detection["class_name"]
             confidence = detection["confidence"]
             logger.log(f"{label} detected (confidence={confidence:.2f})")
             saver.save(frame, label)
-            alert_until = time.time() + ALERT_HOLD_SECONDS
-            alert_frame = frame.copy()
-            draw_alert_banner(
-                alert_frame,
+            alert_state.activate(
+                frame,
                 "ALERT  WEAPON DETECTED",
                 f"{label.upper()} detected ({confidence:.2f})",
-                ALERT_BANNER_COLOR,
-                ALERT_TEXT_COLOR,
             )
-            cv2.namedWindow(ALERT_WINDOW_NAME, cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(ALERT_WINDOW_NAME, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT)
-            cv2.moveWindow(
-                ALERT_WINDOW_NAME,
-                MAIN_WINDOW_X + MAIN_WINDOW_WIDTH + ALERT_WINDOW_GAP,
-                MAIN_WINDOW_Y,
-            )
+            ensure_alert_window()
 
         draw_status(
             frame,
@@ -129,18 +169,21 @@ def main():
 
         cv2.imshow(WINDOW_NAME, resize_to_window(frame, WINDOW_NAME))
 
-        if alert_frame is not None and time.time() < alert_until:
-            cv2.imshow(ALERT_WINDOW_NAME, resize_to_window(alert_frame, ALERT_WINDOW_NAME))
-        elif alert_frame is not None and time.time() >= alert_until:
-            cv2.destroyWindow(ALERT_WINDOW_NAME)
-            alert_frame = None
+        if alert_state.is_active():
+            cv2.imshow(
+                ALERT_WINDOW_NAME,
+                resize_to_window(alert_state.alert_frame, ALERT_WINDOW_NAME),
+            )
+        else:
+            alert_state.clear_if_expired()
+            if alert_state.alert_frame is None:
+                destroy_window_if_exists(ALERT_WINDOW_NAME)
 
         if cv2.waitKey(1) & 0xFF == 27:
             break
 
     camera.release()
-    if alert_frame is not None:
-        cv2.destroyWindow(ALERT_WINDOW_NAME)
+    destroy_window_if_exists(ALERT_WINDOW_NAME)
     cv2.destroyAllWindows()
 
     if DELETE_OUTPUTS_ON_EXIT:
