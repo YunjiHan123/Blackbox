@@ -1,5 +1,16 @@
 import cv2
 
+try:
+    import config_local as _local
+except ImportError:
+    _local = None
+
+
+def _local_or_default(name, default):
+    if _local is None:
+        return default
+    return getattr(_local, name, default)
+
 
 WINDOW_NAME = "Security AI"
 ALERT_WINDOW_NAME = "Security Alert"
@@ -9,7 +20,7 @@ MAIN_WINDOW_WIDTH = 540
 MAIN_WINDOW_HEIGHT = 960
 ALERT_WINDOW_GAP = 24
 
-CAMERA_INDEX = 2
+CAMERA_INDEX = _local_or_default("CAMERA_INDEX", 2)
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 PORTRAIT_ROTATION = cv2.ROTATE_90_CLOCKWISE
