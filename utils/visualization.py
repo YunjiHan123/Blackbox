@@ -57,6 +57,22 @@ def draw_status(frame, message, color):
     )
 
 
+def draw_roi(frame, bbox, label, color, thickness=2):
+
+    x1, y1, x2, y2 = bbox
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness, cv2.LINE_AA)
+    cv2.putText(
+        frame,
+        label,
+        (x1, max(y1 - 10, 20)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        color,
+        2,
+        cv2.LINE_AA,
+    )
+
+
 def draw_alert_banner(frame, title, subtitle, banner_color, text_color):
 
     height, width = frame.shape[:2]

@@ -3,9 +3,9 @@ from ultralytics import YOLO
 
 class WeaponDetector:
 
-    def __init__(self, model_path, allowed_labels=None):
+    def __init__(self, model_path=None, allowed_labels=None, model=None):
 
-        self.model = YOLO(model_path)
+        self.model = model or YOLO(model_path)
         self.class_names = self.model.names
         self.allowed_labels = set(allowed_labels or [])
 
