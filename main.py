@@ -49,8 +49,8 @@ def main():
     saver = FrameSaver()
     gate = DetectionGate(
         min_confidence=0.45,
-        window_size=10,
-        required_hits=6,
+        window_size=5,
+        required_hits=3,
         cooldown_frames=60,
     )
     camera = CameraStream(
