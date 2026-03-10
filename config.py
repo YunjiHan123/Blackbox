@@ -1,0 +1,32 @@
+import cv2
+
+
+WINDOW_NAME = "Security AI"
+ALERT_WINDOW_NAME = "Security Alert"
+
+CAMERA_INDEX = 2
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
+PORTRAIT_ROTATION = cv2.ROTATE_90_CLOCKWISE
+ALERT_HOLD_SECONDS = 3.0
+DELETE_OUTPUTS_ON_EXIT = True
+
+WEAPON_MODEL_PATH = "models/yolo11n.pt"
+POSE_MODEL_PATH = "models/yolo11n-pose.pt"
+
+WEAPON_LABELS = {"knife", "baseball bat"}
+
+POSE_CONNECTIONS = [
+    (0, 1), (0, 2), (1, 3), (2, 4),
+    (5, 6), (5, 7), (7, 9), (6, 8), (8, 10),
+    (5, 11), (6, 12), (11, 12),
+    (11, 13), (13, 15), (12, 14), (14, 16),
+]
+
+POSE_COLOR = (255, 200, 0)
+POSE_LINE_COLOR = (255, 140, 0)
+POSE_POINT_COLOR = (0, 165, 255)
+WEAPON_COLOR = (0, 255, 0)
+STATUS_COLOR = (255, 255, 255)
+ALERT_BANNER_COLOR = (0, 0, 255)
+ALERT_TEXT_COLOR = (255, 255, 255)
