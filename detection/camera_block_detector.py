@@ -3,6 +3,8 @@ import time
 import cv2
 import numpy as np
 
+from event_types import EVENT_CAMERA_BLOCK
+
 
 class CameraBlockDetector:
 
@@ -52,7 +54,7 @@ class CameraBlockDetector:
                     self.last_capture_time = now
 
                 event = {
-                    "class_name": "camera_blocking",
+                    "class_name": EVENT_CAMERA_BLOCK,
                     "confidence": 1.0,
                     "reasons": reasons,
                     "metrics": {

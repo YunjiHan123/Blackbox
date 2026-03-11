@@ -100,3 +100,31 @@ def draw_alert_banner(frame, title, subtitle, banner_color, text_color):
         text_color,
         2,
     )
+
+
+def draw_tracked_person(frame, person, color, loitering_seconds=None):
+
+    x1, y1, x2, y2 = person["bbox"]
+    person_id = person["id"]
+
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+    cv2.putText(
+        frame,
+        f"ID:{person_id}",
+        (x1, max(y1 - 10, 20)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        color,
+        2,
+    )
+
+    if loitering_seconds is not None:
+        cv2.putText(
+            frame,
+            f"{loitering_seconds:.1f}s",
+            (x1, min(y2 + 25, frame.shape[0] - 10)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            color,
+            2,
+        )

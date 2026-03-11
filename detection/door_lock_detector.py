@@ -1,6 +1,8 @@
 import time
 from collections import deque
 
+from event_types import EVENT_DOOR_LOCK_MANIPULATION, EVENT_LABELS
+
 
 class DoorLockDetector:
 
@@ -102,13 +104,12 @@ class DoorLockDetector:
         dx = max(xs) - min(xs)
         dy = max(ys) - min(ys)
 
+        event_name = EVENT_DOOR_LOCK_MANIPULATION
+        subtitle = EVENT_LABELS[EVENT_DOOR_LOCK_MANIPULATION]
+
         if dx > self.movement_delta_threshold or dy > self.movement_delta_threshold:
-            event_name = "shaking_hand_detected"
-            subtitle = "Hand movement inside lock zone detected"
             color = (0, 165, 255)
         else:
-            event_name = "door_lock_try_detected"
-            subtitle = "A hand stayed inside the lock zone"
             color = (0, 0, 255)
 
         event["triggered"] = True

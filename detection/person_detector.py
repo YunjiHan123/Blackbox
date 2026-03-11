@@ -9,8 +9,9 @@ class PersonDetector:
         model_path=PERSON_MODEL_PATH,
         confidence=PERSON_CONFIDENCE,
         image_size=PERSON_IMAGE_SIZE,
+        model=None,
     ):
-        self.model = YOLO(model_path)
+        self.model = model or YOLO(model_path)
         self.confidence = confidence
         self.image_size = image_size
 

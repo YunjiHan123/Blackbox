@@ -30,10 +30,12 @@ from config import (
     MAIN_WINDOW_WIDTH,
     MAIN_WINDOW_X,
     MAIN_WINDOW_Y,
+    LOITERING_THRESHOLD_SECONDS,
     PERSON_NEAR_AREA_THRESHOLD,
     PERSON_NEAR_COOLDOWN_SECONDS,
     PERSON_NEAR_MIN_CONFIDENCE,
     PERSON_NEAR_REQUIRED_TIME_SECONDS,
+    PERSON_TRACK_COLOR,
     POSE_MODEL_PATH,
     POSE_COLOR,
     POSE_CONNECTIONS,
@@ -46,11 +48,23 @@ from config import (
     WEAPON_LABELS,
     WINDOW_NAME,
 )
+from event_types import (
+    EVENT_ALERT_TITLES,
+    EVENT_CAMERA_BLOCK,
+    EVENT_DOOR_LOCK_MANIPULATION,
+    EVENT_FACE_NEAR,
+    EVENT_LABELS,
+    EVENT_LOITERING,
+    EVENT_WEAPON,
+)
 from detection.camera_block_detector import CameraBlockDetector
 from detection.door_lock_detector import DoorLockDetector
+from detection.person_detector import PersonDetector
 from detection.person_proximity_detector import PersonProximityDetector
 from detection.pose_detector import PoseDetector
 from detection.weapon_detector import WeaponDetector
+from behavior.loitering import LoiteringDetector
+from tracking.person_tracker import PersonTracker
 from utils.alert_state import AlertState
 from utils.camera import CameraStream, resize_to_window
 from utils.detection_gate import DetectionGate
@@ -61,6 +75,7 @@ from utils.visualization import (
     draw_pose,
     draw_roi,
     draw_status,
+    draw_tracked_person,
 )
 
 
@@ -99,6 +114,7 @@ def main():
         min_confidence=PERSON_NEAR_MIN_CONFIDENCE,
         cooldown_seconds=PERSON_NEAR_COOLDOWN_SECONDS,
     )
+    person_detector = PersonDetector(model=object_model)
     pose_detector = PoseDetector(POSE_MODEL_PATH)
     camera_block_detector = CameraBlockDetector(
         change_ratio_threshold=CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
@@ -118,6 +134,8 @@ def main():
         movement_delta_threshold=DOOR_LOCK_MOVEMENT_DELTA_THRESHOLD,
         cooldown_seconds=DOOR_LOCK_COOLDOWN_SECONDS,
     )
+    person_tracker = PersonTracker()
+    loitering_detector = LoiteringDetector(threshold=LOITERING_THRESHOLD_SECONDS)
     logger = Logger()
     saver = FrameSaver()
     alert_state = AlertState(ALERT_HOLD_SECONDS, ALERT_BANNER_COLOR, ALERT_TEXT_COLOR)
@@ -156,6 +174,8 @@ def main():
             break
 
         weapon_detections = weapon_detector.detect(frame)
+        person_detections = person_detector.detect(frame)
+        persons = person_tracker.update(person_detections, frame)
         poses = pose_detector.detect(frame)
         block_event = camera_block_detector.analyze(frame)
         person_near_event = person_proximity_detector.analyze(frame)
@@ -173,6 +193,27 @@ def main():
 
         for detection in weapon_detections:
             draw_detection(frame, detection, WEAPON_COLOR)
+
+        for person in persons:
+            person_id = person["id"]
+            loitering_seconds = loitering_detector.get_duration(person_id)
+
+            draw_tracked_person(
+                frame,
+                person,
+                PERSON_TRACK_COLOR,
+                loitering_seconds=loitering_seconds,
+            )
+
+            if loitering_detector.update(person_id):
+                logger.log(f"{EVENT_LOITERING} detected (id={person_id})")
+                saver.save(frame, EVENT_LOITERING)
+                alert_state.activate(
+                    frame,
+                    EVENT_ALERT_TITLES[EVENT_LOITERING],
+                    f"{EVENT_LABELS[EVENT_LOITERING]} (ID={person_id})",
+                )
+                ensure_alert_window()
 
         draw_roi(
             frame,
@@ -210,7 +251,7 @@ def main():
                 saver.save(frame, door_lock_event["event_name"])
                 alert_state.activate(
                     frame,
-                    "ALERT  DOOR LOCK TAMPERING",
+                    EVENT_ALERT_TITLES[EVENT_DOOR_LOCK_MANIPULATION],
                     door_lock_event["subtitle"],
                 )
                 ensure_alert_window()
@@ -225,16 +266,16 @@ def main():
             if person_near_event["triggered"]:
                 if person_near_event["should_capture"]:
                     logger.log(
-                        "person near camera detected "
+                        f"{EVENT_FACE_NEAR} detected "
                         f"(area_ratio={person_near_event['area_ratio']:.2f}, "
                         f"confidence={person_near_event['confidence']:.2f}, "
                         f"elapsed={person_near_event['elapsed']:.1f}s)"
                     )
-                    saver.save(frame, "person_near_camera")
+                    saver.save(frame, EVENT_FACE_NEAR)
                     alert_state.activate(
                         frame,
-                        "ALERT  PERSON NEAR CAMERA",
-                        "A person stayed too close to the camera",
+                        EVENT_ALERT_TITLES[EVENT_FACE_NEAR],
+                        EVENT_LABELS[EVENT_FACE_NEAR],
                     )
                     ensure_alert_window()
             else:
@@ -251,28 +292,31 @@ def main():
         if block_event is not None:
             if block_event["should_capture"]:
                 logger.log(
-                    "camera blocking detected "
+                    f"{EVENT_CAMERA_BLOCK} detected "
                     f"(brightness={block_event['metrics']['brightness']:.1f}, "
                     f"pixel_std={block_event['metrics']['pixel_std']:.1f}, "
                     f"change_ratio={block_event['metrics']['change_ratio']:.2f})"
                 )
-                saver.save(frame, "camera_blocking")
+                saver.save(frame, EVENT_CAMERA_BLOCK)
                 alert_state.activate(
                     frame,
-                    "ALERT  CAMERA BLOCKING",
-                    "Camera blocking attempt detected",
+                    EVENT_ALERT_TITLES[EVENT_CAMERA_BLOCK],
+                    EVENT_LABELS[EVENT_CAMERA_BLOCK],
                 )
                 ensure_alert_window()
 
         for detection in gate.update(weapon_detections):
             label = detection["class_name"]
             confidence = detection["confidence"]
-            logger.log(f"{label} detected (confidence={confidence:.2f})")
-            saver.save(frame, label)
+            logger.log(
+                f"{EVENT_WEAPON} detected "
+                f"(label={label}, confidence={confidence:.2f})"
+            )
+            saver.save(frame, EVENT_WEAPON)
             alert_state.activate(
                 frame,
-                "ALERT  WEAPON DETECTED",
-                f"{label.upper()} detected ({confidence:.2f})",
+                EVENT_ALERT_TITLES[EVENT_WEAPON],
+                f"{EVENT_LABELS[EVENT_WEAPON]}: {label.upper()} ({confidence:.2f})",
             )
             ensure_alert_window()
 

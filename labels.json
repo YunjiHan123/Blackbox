@@ -2,59 +2,87 @@
   "videos": [
     {
       "file": "bat_01.MOV",
-      "expected_warnings": ["weapon_detected"]
+      "expected_warnings": [
+        "weapon"
+      ]
     },
     {
       "file": "bat_02.MOV",
-      "expected_warnings": ["weapon_detected"]
+      "expected_warnings": [
+        "weapon"
+      ]
     },
     {
       "file": "camera_block_01.MOV",
-      "expected_warnings": ["camera_blocking"]
+      "expected_warnings": [
+        "camera_block"
+      ]
     },
     {
       "file": "camera_block_02.MOV",
-      "expected_warnings": ["camera_blocking"]
+      "expected_warnings": [
+        "camera_block"
+      ]
     },
     {
       "file": "door_knock_01.MOV",
-      "expected_warnings": ["door_knock"]
+      "expected_warnings": [
+        "door_knock"
+      ]
     },
     {
       "file": "door_knock_02.MOV",
-      "expected_warnings": ["door_knock"]
+      "expected_warnings": [
+        "door_knock"
+      ]
     },
     {
       "file": "door_lock_shake_01.MOV",
-      "expected_warnings": ["shaking_hand_detected"]
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
     },
     {
       "file": "door_lock_shake_02.MOV",
-      "expected_warnings": ["shaking_hand_detected"]
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
     },
     {
       "file": "door_lock_try_01.MOV",
-      "expected_warnings": ["door_lock_try_detected"]
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
     },
     {
       "file": "door_lock_try_02.MOV",
-      "expected_warnings": ["door_lock_try_detected"]
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
     },
     {
       "file": "head_close_01.MOV",
-      "expected_warnings": ["person_near_camera"]
+      "expected_warnings": [
+        "face_near"
+      ]
     },
     {
       "file": "head_close_02.MOV",
-      "expected_warnings": ["person_near_camera"]
+      "expected_warnings": [
+        "face_near"
+      ]
     },
     {
       "file": "loitering_01.MOV",
-      "expected_warnings": ["loitering"]
+      "expected_warnings": [
+        "loitering"
+      ]
     },
     {
       "file": "loitering_02.MOV",
-      "expected_warnings": ["loitering"]
+      "expected_warnings": [
+        "loitering"
+      ]
     }
   ]
 }
