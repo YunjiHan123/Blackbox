@@ -50,8 +50,10 @@ class CameraStream:
 
 
 def resize_to_window(frame, window_name):
-
-    _, _, window_width, window_height = cv2.getWindowImageRect(window_name)
+    try:
+        _, _, window_width, window_height = cv2.getWindowImageRect(window_name)
+    except cv2.error:
+        return frame
 
     if window_width <= 0 or window_height <= 0:
         return frame
