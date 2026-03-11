@@ -8,4 +8,4 @@ outputs/
 models/yolo11n.pt
 models/yolo11n-pose.pt
 
-config_local.py
+settings/config_local.py

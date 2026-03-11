@@ -1,6 +1,6 @@
 import time
 
-from events.event_types import EVENT_FACE_NEAR
+from core.event_types import EVENT_FACE_NEAR
 
 
 class PersonProximityDetector:

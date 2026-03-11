@@ -1,7 +1,8 @@
 import cv2
-from ultralytics import YOLO
 
-from config import (
+from core.event_handler import handle_event
+from core.pipeline import analyze_frame, create_pipeline
+from settings import (
     ALERT_BANNER_COLOR,
     ALERT_HOLD_SECONDS,
     ALERT_TEXT_COLOR,
@@ -30,26 +31,17 @@ from config import (
     MAIN_WINDOW_WIDTH,
     MAIN_WINDOW_X,
     MAIN_WINDOW_Y,
-    LOITERING_THRESHOLD_SECONDS,
-    PERSON_NEAR_AREA_THRESHOLD,
-    PERSON_NEAR_COOLDOWN_SECONDS,
-    PERSON_NEAR_MIN_CONFIDENCE,
-    PERSON_NEAR_REQUIRED_TIME_SECONDS,
     PERSON_TRACK_COLOR,
-    POSE_MODEL_PATH,
     POSE_COLOR,
     POSE_CONNECTIONS,
     POSE_LINE_COLOR,
     POSE_POINT_COLOR,
     PORTRAIT_ROTATION,
     STATUS_COLOR,
-    WEAPON_MODEL_PATH,
     WEAPON_COLOR,
-    WEAPON_LABELS,
     WINDOW_NAME,
 )
-from app.event_handler import handle_event
-from events.event_types import (
+from core.event_types import (
     EVENT_CAMERA_BLOCK,
     EVENT_DOOR_LOCK_MANIPULATION,
     EVENT_FACE_NEAR,
@@ -57,19 +49,10 @@ from events.event_types import (
     EVENT_LOITERING,
     EVENT_WEAPON,
 )
-from detection.camera_block_detector import CameraBlockDetector
-from detection.door_lock_detector import DoorLockDetector
-from detection.person_detector import PersonDetector
-from detection.person_proximity_detector import PersonProximityDetector
-from detection.pose_detector import PoseDetector
-from detection.weapon_detector import WeaponDetector
-from behaviors.loitering_behavior import LoiteringDetector
-from tracking.person_tracker import PersonTracker
-from services.alert_state import AlertState
-from services.frame_saver import FrameSaver
-from services.logger import Logger
+from core.alert_state import AlertState
+from core.frame_saver import FrameSaver
+from core.logger import Logger
 from utils.camera import CameraStream, resize_to_window
-from utils.detection_gate import DetectionGate
 from utils.visualization import (
     draw_detection,
     draw_pose,
@@ -102,49 +85,10 @@ def destroy_window_if_exists(window_name):
 
 def main():
 
-    object_model = YOLO(WEAPON_MODEL_PATH)
-    weapon_detector = WeaponDetector(
-        allowed_labels=WEAPON_LABELS,
-        model=object_model,
-    )
-    person_proximity_detector = PersonProximityDetector(
-        model=object_model,
-        area_threshold=PERSON_NEAR_AREA_THRESHOLD,
-        required_time_seconds=PERSON_NEAR_REQUIRED_TIME_SECONDS,
-        min_confidence=PERSON_NEAR_MIN_CONFIDENCE,
-        cooldown_seconds=PERSON_NEAR_COOLDOWN_SECONDS,
-    )
-    person_detector = PersonDetector(model=object_model)
-    pose_detector = PoseDetector(POSE_MODEL_PATH)
-    camera_block_detector = CameraBlockDetector(
-        change_ratio_threshold=CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
-        min_brightness=CAMERA_BLOCK_MIN_BRIGHTNESS,
-        min_pixel_std=CAMERA_BLOCK_MIN_PIXEL_STD,
-        capture_interval_seconds=CAMERA_BLOCK_CAPTURE_INTERVAL_SECONDS,
-    )
-    door_lock_detector = DoorLockDetector(
-        roi_x_ratio=DOOR_LOCK_ROI_X_RATIO,
-        roi_y_ratio=DOOR_LOCK_ROI_Y_RATIO,
-        roi_width_ratio=DOOR_LOCK_ROI_WIDTH_RATIO,
-        roi_height_ratio=DOOR_LOCK_ROI_HEIGHT_RATIO,
-        wrist_confidence_threshold=DOOR_LOCK_WRIST_CONFIDENCE_THRESHOLD,
-        required_seconds=DOOR_LOCK_REQUIRED_SECONDS,
-        movement_history_size=DOOR_LOCK_MOVEMENT_HISTORY_SIZE,
-        decay_frames=DOOR_LOCK_DECAY_FRAMES,
-        movement_delta_threshold=DOOR_LOCK_MOVEMENT_DELTA_THRESHOLD,
-        cooldown_seconds=DOOR_LOCK_COOLDOWN_SECONDS,
-    )
-    person_tracker = PersonTracker()
-    loitering_detector = LoiteringDetector(threshold=LOITERING_THRESHOLD_SECONDS)
+    pipeline = create_pipeline()
     logger = Logger()
     saver = FrameSaver()
     alert_state = AlertState(ALERT_HOLD_SECONDS, ALERT_BANNER_COLOR, ALERT_TEXT_COLOR)
-    gate = DetectionGate(
-        min_confidence=0.45,
-        window_size=5,
-        required_hits=3,
-        cooldown_frames=60,
-    )
     camera = CameraStream(
         camera_index=CAMERA_INDEX,
         frame_width=FRAME_WIDTH,
@@ -173,13 +117,13 @@ def main():
             print("Failed to read frame from camera.")
             break
 
-        weapon_detections = weapon_detector.detect(frame)
-        person_detections = person_detector.detect(frame)
-        persons = person_tracker.update(person_detections, frame)
-        poses = pose_detector.detect(frame)
-        block_event = camera_block_detector.analyze(frame)
-        person_near_event = person_proximity_detector.analyze(frame)
-        door_lock_event = door_lock_detector.analyze(frame, poses)
+        frame_result = analyze_frame(pipeline, frame)
+        weapon_detections = frame_result["weapon_detections"]
+        persons = frame_result["persons"]
+        poses = frame_result["poses"]
+        block_event = frame_result["block_event"]
+        person_near_event = frame_result["person_near_event"]
+        door_lock_event = frame_result["door_lock_event"]
 
         for pose in poses:
             draw_pose(
@@ -196,7 +140,7 @@ def main():
 
         for person in persons:
             person_id = person["id"]
-            loitering_seconds = loitering_detector.get_duration(person_id)
+            loitering_seconds = pipeline["loitering_detector"].get_duration(person_id)
 
             draw_tracked_person(
                 frame,
@@ -205,7 +149,7 @@ def main():
                 loitering_seconds=loitering_seconds,
             )
 
-            if loitering_detector.update(person_id):
+            if pipeline["loitering_detector"].update(person_id):
                 handle_event(
                     frame,
                     EVENT_LOITERING,
@@ -312,7 +256,7 @@ def main():
                     ),
                 )
 
-        for detection in gate.update(weapon_detections):
+        for detection in pipeline["weapon_gate"].update(weapon_detections):
             label = detection["class_name"]
             confidence = detection["confidence"]
             handle_event(

@@ -1,7 +1,7 @@
 import cv2
 
 try:
-    import config_local as _local
+    from . import config_local as _local
 except ImportError:
     _local = None
 

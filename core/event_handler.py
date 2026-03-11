@@ -1,4 +1,4 @@
-from events.event_types import EVENT_ALERT_TITLES, EVENT_LABELS
+from core.event_types import EVENT_ALERT_TITLES, EVENT_LABELS
 
 
 def handle_event(
