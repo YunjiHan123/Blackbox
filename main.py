@@ -30,10 +30,12 @@ from config import (
     MAIN_WINDOW_WIDTH,
     MAIN_WINDOW_X,
     MAIN_WINDOW_Y,
+    LOITERING_THRESHOLD_SECONDS,
     PERSON_NEAR_AREA_THRESHOLD,
     PERSON_NEAR_COOLDOWN_SECONDS,
     PERSON_NEAR_MIN_CONFIDENCE,
     PERSON_NEAR_REQUIRED_TIME_SECONDS,
+    PERSON_TRACK_COLOR,
     POSE_MODEL_PATH,
     POSE_COLOR,
     POSE_CONNECTIONS,
@@ -48,9 +50,12 @@ from config import (
 )
 from detection.camera_block_detector import CameraBlockDetector
 from detection.door_lock_detector import DoorLockDetector
+from detection.person_detector import PersonDetector
 from detection.person_proximity_detector import PersonProximityDetector
 from detection.pose_detector import PoseDetector
 from detection.weapon_detector import WeaponDetector
+from behavior.loitering import LoiteringDetector
+from tracking.person_tracker import PersonTracker
 from utils.alert_state import AlertState
 from utils.camera import CameraStream, resize_to_window
 from utils.detection_gate import DetectionGate
@@ -61,6 +66,7 @@ from utils.visualization import (
     draw_pose,
     draw_roi,
     draw_status,
+    draw_tracked_person,
 )
 
 
@@ -99,6 +105,7 @@ def main():
         min_confidence=PERSON_NEAR_MIN_CONFIDENCE,
         cooldown_seconds=PERSON_NEAR_COOLDOWN_SECONDS,
     )
+    person_detector = PersonDetector(model=object_model)
     pose_detector = PoseDetector(POSE_MODEL_PATH)
     camera_block_detector = CameraBlockDetector(
         change_ratio_threshold=CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
@@ -118,6 +125,8 @@ def main():
         movement_delta_threshold=DOOR_LOCK_MOVEMENT_DELTA_THRESHOLD,
         cooldown_seconds=DOOR_LOCK_COOLDOWN_SECONDS,
     )
+    person_tracker = PersonTracker()
+    loitering_detector = LoiteringDetector(threshold=LOITERING_THRESHOLD_SECONDS)
     logger = Logger()
     saver = FrameSaver()
     alert_state = AlertState(ALERT_HOLD_SECONDS, ALERT_BANNER_COLOR, ALERT_TEXT_COLOR)
@@ -156,6 +165,8 @@ def main():
             break
 
         weapon_detections = weapon_detector.detect(frame)
+        person_detections = person_detector.detect(frame)
+        persons = person_tracker.update(person_detections, frame)
         poses = pose_detector.detect(frame)
         block_event = camera_block_detector.analyze(frame)
         person_near_event = person_proximity_detector.analyze(frame)
@@ -173,6 +184,27 @@ def main():
 
         for detection in weapon_detections:
             draw_detection(frame, detection, WEAPON_COLOR)
+
+        for person in persons:
+            person_id = person["id"]
+            loitering_seconds = loitering_detector.get_duration(person_id)
+
+            draw_tracked_person(
+                frame,
+                person,
+                PERSON_TRACK_COLOR,
+                loitering_seconds=loitering_seconds,
+            )
+
+            if loitering_detector.update(person_id):
+                logger.log(f"loitering detected (id={person_id})")
+                saver.save(frame, f"loitering_{person_id}")
+                alert_state.activate(
+                    frame,
+                    "ALERT  LOITERING DETECTED",
+                    f"Loitering detected (ID={person_id})",
+                )
+                ensure_alert_window()
 
         draw_roi(
             frame,
