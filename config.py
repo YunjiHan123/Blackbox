@@ -29,6 +29,9 @@ DELETE_OUTPUTS_ON_EXIT = True
 
 WEAPON_MODEL_PATH = "models/yolo11n.pt"
 POSE_MODEL_PATH = "models/yolo11n-pose.pt"
+PERSON_MODEL_PATH = "models/yolo11n.pt"
+PERSON_CONFIDENCE = 0.2
+PERSON_IMAGE_SIZE = 960
 
 WEAPON_LABELS = {"knife", "baseball bat"}
 
