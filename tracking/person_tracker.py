@@ -19,6 +19,7 @@ class PersonTracker:
             max_age=max_age,
             n_init=n_init,
             max_cosine_distance=max_cosine_distance,
+            embedder=None,
         )
         self.reid_match_threshold = reid_match_threshold
         self.reid_ttl_seconds = reid_ttl_seconds
@@ -29,6 +30,7 @@ class PersonTracker:
 
     def update(self, detections, frame):
         ds_detections = []
+        embeds = []
 
         for det in detections:
             x1, y1, x2, y2 = det["bbox"]
@@ -38,8 +40,9 @@ class PersonTracker:
             if w <= 0 or h <= 0:
                 continue
             ds_detections.append(([x1, y1, w, h], conf, "person"))
+            embeds.append(self._extract_detection_embedding(frame, det["bbox"]))
 
-        tracks = self.tracker.update_tracks(ds_detections, frame=frame)
+        tracks = self.tracker.update_tracks(ds_detections, embeds=embeds)
 
         now = time.time()
         self._expire_old_profiles(now)
@@ -200,6 +203,17 @@ class PersonTracker:
             "hist": self._extract_hist(crop),
             "orb": self._extract_orb(crop),
         }
+
+    def _extract_detection_embedding(self, frame, bbox):
+        crop = self._crop_bbox(frame, bbox)
+        if crop is None:
+            return np.zeros(24 * 24, dtype=np.float32)
+
+        hist = self._extract_hist(crop)
+        if hist is None:
+            return np.zeros(24 * 24, dtype=np.float32)
+
+        return hist
 
     def _crop_bbox(self, frame, bbox):
         height, width = frame.shape[:2]
