@@ -19,9 +19,10 @@ def draw_detection(frame, detection, color):
     )
 
 
-def draw_pose(frame, pose, box_color, line_color, point_color, connections):
+def draw_pose(frame, pose, box_color, line_color, point_color, connections, draw_box=True):
 
-    draw_detection(frame, pose, box_color)
+    if draw_box:
+        draw_detection(frame, pose, box_color)
 
     for start_idx, end_idx in connections:
         x1, y1, confidence1 = pose["keypoints"][start_idx]
