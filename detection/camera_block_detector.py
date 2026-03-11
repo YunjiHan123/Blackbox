@@ -3,7 +3,7 @@ import time
 import cv2
 import numpy as np
 
-from event_types import EVENT_CAMERA_BLOCK
+from core.event_types import EVENT_CAMERA_BLOCK
 
 
 class CameraBlockDetector:

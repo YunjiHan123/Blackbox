@@ -2,54 +2,27 @@ import json
 from pathlib import Path
 
 import cv2
-from ultralytics import YOLO
 
-from config import (
-    CAMERA_BLOCK_CAPTURE_INTERVAL_SECONDS,
-    CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
-    CAMERA_BLOCK_MIN_BRIGHTNESS,
-    CAMERA_BLOCK_MIN_PIXEL_STD,
-    DOOR_LOCK_COOLDOWN_SECONDS,
-    DOOR_LOCK_DECAY_FRAMES,
-    DOOR_LOCK_MOVEMENT_DELTA_THRESHOLD,
-    DOOR_LOCK_MOVEMENT_HISTORY_SIZE,
-    DOOR_LOCK_REQUIRED_SECONDS,
-    DOOR_LOCK_ROI_HEIGHT_RATIO,
-    DOOR_LOCK_ROI_WIDTH_RATIO,
-    DOOR_LOCK_ROI_X_RATIO,
-    DOOR_LOCK_ROI_Y_RATIO,
-    DOOR_LOCK_WRIST_CONFIDENCE_THRESHOLD,
-    PERSON_NEAR_AREA_THRESHOLD,
-    PERSON_NEAR_COOLDOWN_SECONDS,
-    PERSON_NEAR_MIN_CONFIDENCE,
-    PERSON_NEAR_REQUIRED_TIME_SECONDS,
+from core.pipeline import analyze_frame, create_pipeline
+from settings import (
     POSE_COLOR,
     POSE_CONNECTIONS,
     POSE_LINE_COLOR,
-    POSE_MODEL_PATH,
     POSE_POINT_COLOR,
     WEAPON_COLOR,
-    WEAPON_LABELS,
-    WEAPON_MODEL_PATH,
 )
-from event_types import (
+from core.event_types import (
     EVENT_CAMERA_BLOCK,
     EVENT_DOOR_LOCK_MANIPULATION,
     EVENT_FACE_NEAR,
     EVENT_WEAPON,
 )
-from detection.camera_block_detector import CameraBlockDetector
-from detection.door_lock_detector import DoorLockDetector
-from detection.person_proximity_detector import PersonProximityDetector
-from detection.pose_detector import PoseDetector
-from detection.weapon_detector import WeaponDetector
-from utils.detection_gate import DetectionGate
 from utils.visualization import draw_detection, draw_pose, draw_roi
 
 
 ROOT = Path(__file__).resolve().parent
-VIDEOS_DIR = ROOT / "videos"
-LABELS_PATH = ROOT / "labels.json"
+VIDEOS_DIR = ROOT / "test_data" / "videos"
+LABELS_PATH = ROOT / "test_data" / "labels.json"
 WINDOW_NAME = "Evaluation"
 RESULT_HOLD_MS = 800
 SKIP_KEY = ord("s")
@@ -65,52 +38,10 @@ IMPLEMENTED_WARNINGS = {
 class EvaluationRuntime:
 
     def __init__(self):
-
-        object_model = YOLO(WEAPON_MODEL_PATH)
-        pose_model = YOLO(POSE_MODEL_PATH)
-        self.object_model = object_model
-        self.pose_model = pose_model
+        pass
 
     def create_pipeline(self):
-
-        return {
-            "weapon_detector": WeaponDetector(
-                allowed_labels=WEAPON_LABELS,
-                model=self.object_model,
-            ),
-            "pose_detector": PoseDetector(model=self.pose_model),
-            "camera_block_detector": CameraBlockDetector(
-                change_ratio_threshold=CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
-                min_brightness=CAMERA_BLOCK_MIN_BRIGHTNESS,
-                min_pixel_std=CAMERA_BLOCK_MIN_PIXEL_STD,
-                capture_interval_seconds=CAMERA_BLOCK_CAPTURE_INTERVAL_SECONDS,
-            ),
-            "person_proximity_detector": PersonProximityDetector(
-                model=self.object_model,
-                area_threshold=PERSON_NEAR_AREA_THRESHOLD,
-                required_time_seconds=PERSON_NEAR_REQUIRED_TIME_SECONDS,
-                min_confidence=PERSON_NEAR_MIN_CONFIDENCE,
-                cooldown_seconds=PERSON_NEAR_COOLDOWN_SECONDS,
-            ),
-            "door_lock_detector": DoorLockDetector(
-                roi_x_ratio=DOOR_LOCK_ROI_X_RATIO,
-                roi_y_ratio=DOOR_LOCK_ROI_Y_RATIO,
-                roi_width_ratio=DOOR_LOCK_ROI_WIDTH_RATIO,
-                roi_height_ratio=DOOR_LOCK_ROI_HEIGHT_RATIO,
-                wrist_confidence_threshold=DOOR_LOCK_WRIST_CONFIDENCE_THRESHOLD,
-                required_seconds=DOOR_LOCK_REQUIRED_SECONDS,
-                movement_history_size=DOOR_LOCK_MOVEMENT_HISTORY_SIZE,
-                decay_frames=DOOR_LOCK_DECAY_FRAMES,
-                movement_delta_threshold=DOOR_LOCK_MOVEMENT_DELTA_THRESHOLD,
-                cooldown_seconds=DOOR_LOCK_COOLDOWN_SECONDS,
-            ),
-            "weapon_gate": DetectionGate(
-                min_confidence=0.45,
-                window_size=5,
-                required_hits=3,
-                cooldown_frames=60,
-            ),
-        }
+        return create_pipeline()
 
 
 def load_dataset(labels_path=LABELS_PATH):
@@ -239,15 +170,12 @@ def model(video_path, runtime, expected_warnings, video_name, progress_text):
             timestamp = _frame_timestamp_seconds(capture, frame_index, fps)
             last_frame = frame.copy()
 
-            weapon_detections = pipeline["weapon_detector"].detect(frame)
-            poses = pipeline["pose_detector"].detect(frame)
-            block_event = pipeline["camera_block_detector"].analyze(frame, timestamp=timestamp)
-            person_event = pipeline["person_proximity_detector"].analyze(frame, timestamp=timestamp)
-            door_lock_event = pipeline["door_lock_detector"].analyze(
-                frame,
-                poses,
-                timestamp=timestamp,
-            )
+            frame_result = analyze_frame(pipeline, frame, timestamp=timestamp)
+            weapon_detections = frame_result["weapon_detections"]
+            poses = frame_result["poses"]
+            block_event = frame_result["block_event"]
+            person_event = frame_result["person_near_event"]
+            door_lock_event = frame_result["door_lock_event"]
 
             if pipeline["weapon_gate"].update(weapon_detections):
                 if EVENT_WEAPON not in detected_warnings:

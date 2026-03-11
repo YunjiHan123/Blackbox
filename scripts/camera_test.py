@@ -1,7 +1,7 @@
 import cv2
 from ultralytics import YOLO
 
-from config import (
+from settings import (
     CAMERA_BUFFER_SIZE,
     CAMERA_INDEX,
     FRAME_HEIGHT,
