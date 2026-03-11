@@ -48,8 +48,8 @@ from config import (
     WEAPON_LABELS,
     WINDOW_NAME,
 )
-from event_types import (
-    EVENT_ALERT_TITLES,
+from app.event_handler import handle_event
+from events.event_types import (
     EVENT_CAMERA_BLOCK,
     EVENT_DOOR_LOCK_MANIPULATION,
     EVENT_FACE_NEAR,
@@ -63,13 +63,13 @@ from detection.person_detector import PersonDetector
 from detection.person_proximity_detector import PersonProximityDetector
 from detection.pose_detector import PoseDetector
 from detection.weapon_detector import WeaponDetector
-from behavior.loitering import LoiteringDetector
+from behaviors.loitering_behavior import LoiteringDetector
 from tracking.person_tracker import PersonTracker
-from utils.alert_state import AlertState
+from services.alert_state import AlertState
+from services.frame_saver import FrameSaver
+from services.logger import Logger
 from utils.camera import CameraStream, resize_to_window
 from utils.detection_gate import DetectionGate
-from utils.frame_saver import FrameSaver
-from utils.logger import Logger
 from utils.visualization import (
     draw_detection,
     draw_pose,
@@ -206,14 +206,16 @@ def main():
             )
 
             if loitering_detector.update(person_id):
-                logger.log(f"{EVENT_LOITERING} detected (id={person_id})")
-                saver.save(frame, EVENT_LOITERING)
-                alert_state.activate(
+                handle_event(
                     frame,
-                    EVENT_ALERT_TITLES[EVENT_LOITERING],
-                    f"{EVENT_LABELS[EVENT_LOITERING]} (ID={person_id})",
+                    EVENT_LOITERING,
+                    logger,
+                    saver,
+                    alert_state,
+                    ensure_alert_window,
+                    subtitle=f"{EVENT_LABELS[EVENT_LOITERING]} (ID={person_id})",
+                    log_message=f"{EVENT_LOITERING} detected (id={person_id})",
                 )
-                ensure_alert_window()
 
         draw_roi(
             frame,
@@ -243,18 +245,21 @@ def main():
                     2,
                 )
             elif door_lock_event["should_capture"]:
-                logger.log(
-                    f"{door_lock_event['event_name']} "
-                    f"(dx={door_lock_event['movement_dx']}, dy={door_lock_event['movement_dy']}, "
-                    f"frames={door_lock_event['frames_in_zone']})"
-                )
-                saver.save(frame, door_lock_event["event_name"])
-                alert_state.activate(
+                handle_event(
                     frame,
-                    EVENT_ALERT_TITLES[EVENT_DOOR_LOCK_MANIPULATION],
-                    door_lock_event["subtitle"],
+                    EVENT_DOOR_LOCK_MANIPULATION,
+                    logger,
+                    saver,
+                    alert_state,
+                    ensure_alert_window,
+                    subtitle=door_lock_event["subtitle"],
+                    log_message=(
+                        f"{door_lock_event['event_name']} "
+                        f"(dx={door_lock_event['movement_dx']}, dy={door_lock_event['movement_dy']}, "
+                        f"frames={door_lock_event['frames_in_zone']})"
+                    ),
+                    save_prefix=door_lock_event["event_name"],
                 )
-                ensure_alert_window()
 
         if person_near_event is not None:
             draw_detection(
@@ -265,19 +270,20 @@ def main():
 
             if person_near_event["triggered"]:
                 if person_near_event["should_capture"]:
-                    logger.log(
-                        f"{EVENT_FACE_NEAR} detected "
-                        f"(area_ratio={person_near_event['area_ratio']:.2f}, "
-                        f"confidence={person_near_event['confidence']:.2f}, "
-                        f"elapsed={person_near_event['elapsed']:.1f}s)"
-                    )
-                    saver.save(frame, EVENT_FACE_NEAR)
-                    alert_state.activate(
+                    handle_event(
                         frame,
-                        EVENT_ALERT_TITLES[EVENT_FACE_NEAR],
-                        EVENT_LABELS[EVENT_FACE_NEAR],
+                        EVENT_FACE_NEAR,
+                        logger,
+                        saver,
+                        alert_state,
+                        ensure_alert_window,
+                        log_message=(
+                            f"{EVENT_FACE_NEAR} detected "
+                            f"(area_ratio={person_near_event['area_ratio']:.2f}, "
+                            f"confidence={person_near_event['confidence']:.2f}, "
+                            f"elapsed={person_near_event['elapsed']:.1f}s)"
+                        ),
                     )
-                    ensure_alert_window()
             else:
                 cv2.putText(
                     frame,
@@ -291,34 +297,37 @@ def main():
 
         if block_event is not None:
             if block_event["should_capture"]:
-                logger.log(
-                    f"{EVENT_CAMERA_BLOCK} detected "
-                    f"(brightness={block_event['metrics']['brightness']:.1f}, "
-                    f"pixel_std={block_event['metrics']['pixel_std']:.1f}, "
-                    f"change_ratio={block_event['metrics']['change_ratio']:.2f})"
-                )
-                saver.save(frame, EVENT_CAMERA_BLOCK)
-                alert_state.activate(
+                handle_event(
                     frame,
-                    EVENT_ALERT_TITLES[EVENT_CAMERA_BLOCK],
-                    EVENT_LABELS[EVENT_CAMERA_BLOCK],
+                    EVENT_CAMERA_BLOCK,
+                    logger,
+                    saver,
+                    alert_state,
+                    ensure_alert_window,
+                    log_message=(
+                        f"{EVENT_CAMERA_BLOCK} detected "
+                        f"(brightness={block_event['metrics']['brightness']:.1f}, "
+                        f"pixel_std={block_event['metrics']['pixel_std']:.1f}, "
+                        f"change_ratio={block_event['metrics']['change_ratio']:.2f})"
+                    ),
                 )
-                ensure_alert_window()
 
         for detection in gate.update(weapon_detections):
             label = detection["class_name"]
             confidence = detection["confidence"]
-            logger.log(
-                f"{EVENT_WEAPON} detected "
-                f"(label={label}, confidence={confidence:.2f})"
-            )
-            saver.save(frame, EVENT_WEAPON)
-            alert_state.activate(
+            handle_event(
                 frame,
-                EVENT_ALERT_TITLES[EVENT_WEAPON],
-                f"{EVENT_LABELS[EVENT_WEAPON]}: {label.upper()} ({confidence:.2f})",
+                EVENT_WEAPON,
+                logger,
+                saver,
+                alert_state,
+                ensure_alert_window,
+                subtitle=f"{EVENT_LABELS[EVENT_WEAPON]}: {label.upper()} ({confidence:.2f})",
+                log_message=(
+                    f"{EVENT_WEAPON} detected "
+                    f"(label={label}, confidence={confidence:.2f})"
+                ),
             )
-            ensure_alert_window()
 
         draw_status(
             frame,

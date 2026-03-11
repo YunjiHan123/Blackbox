@@ -1,7 +1,7 @@
 import time
 from collections import deque
 
-from event_types import EVENT_DOOR_LOCK_MANIPULATION, EVENT_LABELS
+from events.event_types import EVENT_DOOR_LOCK_MANIPULATION, EVENT_LABELS
 
 
 class DoorLockDetector:

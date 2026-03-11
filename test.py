@@ -32,7 +32,7 @@ from config import (
     WEAPON_LABELS,
     WEAPON_MODEL_PATH,
 )
-from event_types import (
+from events.event_types import (
     EVENT_CAMERA_BLOCK,
     EVENT_DOOR_LOCK_MANIPULATION,
     EVENT_FACE_NEAR,
