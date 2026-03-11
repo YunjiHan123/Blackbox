@@ -3,21 +3,14 @@ from pathlib import Path
 
 import cv2
 
+from core.evaluation import collect_detected_warnings, render_evaluation_frame
 from core.pipeline import analyze_frame, create_pipeline
-from settings import (
-    POSE_COLOR,
-    POSE_CONNECTIONS,
-    POSE_LINE_COLOR,
-    POSE_POINT_COLOR,
-    WEAPON_COLOR,
-)
 from core.event_types import (
     EVENT_CAMERA_BLOCK,
     EVENT_DOOR_LOCK_MANIPULATION,
     EVENT_FACE_NEAR,
     EVENT_WEAPON,
 )
-from utils.visualization import draw_detection, draw_pose, draw_roi
 
 
 ROOT = Path(__file__).resolve().parent
@@ -171,62 +164,10 @@ def model(video_path, runtime, expected_warnings, video_name, progress_text):
             last_frame = frame.copy()
 
             frame_result = analyze_frame(pipeline, frame, timestamp=timestamp)
-            weapon_detections = frame_result["weapon_detections"]
-            poses = frame_result["poses"]
-            block_event = frame_result["block_event"]
-            person_event = frame_result["person_near_event"]
-            door_lock_event = frame_result["door_lock_event"]
-
-            if pipeline["weapon_gate"].update(weapon_detections):
-                if EVENT_WEAPON not in detected_warnings:
-                    detected_warnings.append(EVENT_WEAPON)
-
-            if block_event is not None and block_event["should_capture"]:
-                if EVENT_CAMERA_BLOCK not in detected_warnings:
-                    detected_warnings.append(EVENT_CAMERA_BLOCK)
-
-            if person_event is not None and person_event["triggered"] and person_event["should_capture"]:
-                if EVENT_FACE_NEAR not in detected_warnings:
-                    detected_warnings.append(EVENT_FACE_NEAR)
-
-            if door_lock_event["triggered"] and door_lock_event["should_capture"]:
-                if door_lock_event["event_name"] not in detected_warnings:
-                    detected_warnings.append(door_lock_event["event_name"])
+            collect_detected_warnings(frame_result, pipeline, detected_warnings)
 
             display_frame = frame.copy()
-
-            for pose in poses:
-                draw_pose(
-                    display_frame,
-                    pose,
-                    box_color=POSE_COLOR,
-                    line_color=POSE_LINE_COLOR,
-                    point_color=POSE_POINT_COLOR,
-                    connections=POSE_CONNECTIONS,
-                )
-
-            for detection in weapon_detections:
-                draw_detection(display_frame, detection, WEAPON_COLOR)
-
-            if person_event is not None:
-                draw_detection(display_frame, person_event, (0, 0, 255))
-
-            draw_roi(
-                display_frame,
-                door_lock_event["roi"],
-                "Door Lock",
-                door_lock_event["color"],
-                thickness=3 if door_lock_event["target_wrist"] is not None else 2,
-            )
-
-            if door_lock_event["target_wrist"] is not None:
-                cv2.circle(
-                    display_frame,
-                    door_lock_event["target_wrist"],
-                    6,
-                    door_lock_event["color"],
-                    -1,
-                )
+            render_evaluation_frame(display_frame, frame_result, pipeline)
 
             status = "RUNNING"
             if any(warning in expected_warnings for warning in detected_warnings):
