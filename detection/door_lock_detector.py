@@ -72,7 +72,7 @@ class DoorLockDetector:
             "should_capture": False,
             "event_name": None,
             "subtitle": None,
-            "color": (0, 255, 0),
+            "color": (0, 0, 0),
         }
 
         if target_wrist is None:
@@ -94,7 +94,7 @@ class DoorLockDetector:
         event["frames_in_zone"] = self.wrist_in_zone_frames
         event["elapsed_seconds"] = elapsed_seconds
         event["countdown_seconds"] = max(0.0, self.required_seconds - elapsed_seconds)
-        event["color"] = (0, 0, 255)
+        event["color"] = (0, 165, 255)
 
         if elapsed_seconds < self.required_seconds:
             return event
@@ -107,10 +107,7 @@ class DoorLockDetector:
         event_name = EVENT_DOOR_LOCK_MANIPULATION
         subtitle = EVENT_LABELS[EVENT_DOOR_LOCK_MANIPULATION]
 
-        if dx > self.movement_delta_threshold or dy > self.movement_delta_threshold:
-            color = (0, 165, 255)
-        else:
-            color = (0, 0, 255)
+        color = (0, 165, 255)
 
         event["triggered"] = True
         event["event_name"] = event_name
