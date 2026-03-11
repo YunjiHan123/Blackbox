@@ -19,3 +19,11 @@ EVENT_ALERT_TITLES = {
     EVENT_FACE_NEAR: "ALERT  FACE NEAR CAMERA",
     EVENT_LOITERING: "ALERT  LOITERING DETECTED",
 }
+
+
+def get_event_label(event_type: str) -> str:
+    return EVENT_LABELS.get(event_type, event_type)
+
+
+def get_event_alert_title(event_type: str) -> str:
+    return EVENT_ALERT_TITLES.get(event_type, event_type.upper())

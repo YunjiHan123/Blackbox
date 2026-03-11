@@ -1,85 +1,145 @@
 {
   "videos": [
     {
-      "file": "bat_01.MOV",
+      "file": "door_lock_manipulation_1.MOV",
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
+    },
+    {
+      "file": "door_lock_manipulation_2.MOV",
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
+    },
+    {
+      "file": "door_lock_manipulation_3.MOV",
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
+    },
+    {
+      "file": "door_lock_manipulation_4.MOV",
+      "expected_warnings": [
+        "door_lock_manipulation"
+      ]
+    },
+    {
+      "file": "weapon_1.MOV",
       "expected_warnings": [
         "weapon"
       ]
     },
     {
-      "file": "bat_02.MOV",
+      "file": "weapon_2.MOV",
       "expected_warnings": [
         "weapon"
       ]
     },
     {
-      "file": "camera_block_01.MOV",
+      "file": "weapon_3.MOV",
+      "expected_warnings": [
+        "weapon"
+      ]
+    },
+    {
+      "file": "weapon_4.MOV",
+      "expected_warnings": [
+        "weapon"
+      ]
+    },
+    {
+      "file": "weapon_5.MOV",
+      "expected_warnings": [
+        "weapon"
+      ]
+    },
+    {
+      "file": "weapon_6.MOV",
+      "expected_warnings": [
+        "weapon"
+      ]
+    },
+    {
+      "file": "camera_block_1.MOV",
       "expected_warnings": [
         "camera_block"
       ]
     },
     {
-      "file": "camera_block_02.MOV",
+      "file": "camera_block_2.MOV",
       "expected_warnings": [
         "camera_block"
       ]
     },
     {
-      "file": "door_knock_01.MOV",
+      "file": "camera_block_3.MOV",
       "expected_warnings": [
-        "door_knock"
+        "camera_block"
       ]
     },
     {
-      "file": "door_knock_02.MOV",
+      "file": "camera_block_4.MOV",
       "expected_warnings": [
-        "door_knock"
+        "camera_block"
       ]
     },
     {
-      "file": "door_lock_shake_01.MOV",
-      "expected_warnings": [
-        "door_lock_manipulation"
-      ]
-    },
-    {
-      "file": "door_lock_shake_02.MOV",
-      "expected_warnings": [
-        "door_lock_manipulation"
-      ]
-    },
-    {
-      "file": "door_lock_try_01.MOV",
-      "expected_warnings": [
-        "door_lock_manipulation"
-      ]
-    },
-    {
-      "file": "door_lock_try_02.MOV",
-      "expected_warnings": [
-        "door_lock_manipulation"
-      ]
-    },
-    {
-      "file": "head_close_01.MOV",
+      "file": "face_near_1.MOV",
       "expected_warnings": [
         "face_near"
       ]
     },
     {
-      "file": "head_close_02.MOV",
+      "file": "face_near_2.MOV",
       "expected_warnings": [
         "face_near"
       ]
     },
     {
-      "file": "loitering_01.MOV",
+      "file": "face_near_3.MOV",
+      "expected_warnings": [
+        "face_near"
+      ]
+    },
+    {
+      "file": "face_near_4.MOV",
+      "expected_warnings": [
+        "face_near"
+      ]
+    },
+    {
+      "file": "loitering_1.MOV",
       "expected_warnings": [
         "loitering"
       ]
     },
     {
-      "file": "loitering_02.MOV",
+      "file": "loitering_2.MOV",
+      "expected_warnings": [
+        "loitering"
+      ]
+    },
+    {
+      "file": "loitering_3.MOV",
+      "expected_warnings": [
+        "loitering"
+      ]
+    },
+    {
+      "file": "loitering_4.MOV",
+      "expected_warnings": [
+        "loitering"
+      ]
+    },
+    {
+      "file": "loitering_5.MOV",
+      "expected_warnings": [
+        "loitering"
+      ]
+    },
+    {
+      "file": "loitering_6.MOV",
       "expected_warnings": [
         "loitering"
       ]
