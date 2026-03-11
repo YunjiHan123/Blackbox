@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-from settings import PERSON_CONFIDENCE, PERSON_IMAGE_SIZE, PERSON_MODEL_PATH
+from settings import DEVICE, PERSON_CONFIDENCE, PERSON_IMAGE_SIZE, PERSON_MODEL_PATH
 
 
 class PersonDetector:
@@ -21,6 +21,7 @@ class PersonDetector:
             classes=[0],
             conf=self.confidence,
             imgsz=self.image_size,
+            device=DEVICE,
             verbose=False,
         )
 

@@ -1,5 +1,7 @@
 from ultralytics import YOLO
 
+from settings import DEVICE
+
 
 class WeaponDetector:
 
@@ -11,7 +13,7 @@ class WeaponDetector:
 
     def detect(self, frame):
 
-        results = self.model(frame, verbose=False)
+        results = self.model(frame, device=DEVICE, verbose=False)
 
         detections = []
 

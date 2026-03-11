@@ -1,5 +1,7 @@
 import time
 
+from settings import DEVICE
+
 from core.event_types import EVENT_FACE_NEAR
 
 
@@ -25,7 +27,7 @@ class PersonProximityDetector:
 
     def analyze(self, frame, timestamp=None):
 
-        results = self.model(frame, verbose=False)
+        results = self.model(frame, device=DEVICE, verbose=False)
         frame_area = frame.shape[0] * frame.shape[1]
         best_candidate = None
 
