@@ -3,25 +3,25 @@
     {
       "file": "bat_01.MOV",
       "expected_warnings": [
-        "weapon_detected"
+        "weapon"
       ]
     },
     {
       "file": "bat_02.MOV",
       "expected_warnings": [
-        "weapon_detected"
+        "weapon"
       ]
     },
     {
       "file": "camera_block_01.MOV",
       "expected_warnings": [
-        "camera_blocking"
+        "camera_block"
       ]
     },
     {
       "file": "camera_block_02.MOV",
       "expected_warnings": [
-        "camera_blocking"
+        "camera_block"
       ]
     },
     {
@@ -39,37 +39,37 @@
     {
       "file": "door_lock_shake_01.MOV",
       "expected_warnings": [
-        "shaking_hand_detected"
+        "door_lock_manipulation"
       ]
     },
     {
       "file": "door_lock_shake_02.MOV",
       "expected_warnings": [
-        "shaking_hand_detected"
+        "door_lock_manipulation"
       ]
     },
     {
       "file": "door_lock_try_01.MOV",
       "expected_warnings": [
-        "door_lock_try_detected"
+        "door_lock_manipulation"
       ]
     },
     {
       "file": "door_lock_try_02.MOV",
       "expected_warnings": [
-        "door_lock_try_detected"
+        "door_lock_manipulation"
       ]
     },
     {
       "file": "head_close_01.MOV",
       "expected_warnings": [
-        "person_near_camera"
+        "face_near"
       ]
     },
     {
       "file": "head_close_02.MOV",
       "expected_warnings": [
-        "person_near_camera"
+        "face_near"
       ]
     },
     {

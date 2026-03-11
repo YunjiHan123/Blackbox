@@ -32,6 +32,12 @@ from config import (
     WEAPON_LABELS,
     WEAPON_MODEL_PATH,
 )
+from event_types import (
+    EVENT_CAMERA_BLOCK,
+    EVENT_DOOR_LOCK_MANIPULATION,
+    EVENT_FACE_NEAR,
+    EVENT_WEAPON,
+)
 from detection.camera_block_detector import CameraBlockDetector
 from detection.door_lock_detector import DoorLockDetector
 from detection.person_proximity_detector import PersonProximityDetector
@@ -49,11 +55,10 @@ RESULT_HOLD_MS = 800
 SKIP_KEY = ord("s")
 
 IMPLEMENTED_WARNINGS = {
-    "weapon_detected",
-    "camera_blocking",
-    "person_near_camera",
-    "door_lock_try_detected",
-    "shaking_hand_detected",
+    EVENT_WEAPON,
+    EVENT_CAMERA_BLOCK,
+    EVENT_FACE_NEAR,
+    EVENT_DOOR_LOCK_MANIPULATION,
 }
 
 
@@ -245,16 +250,16 @@ def model(video_path, runtime, expected_warnings, video_name, progress_text):
             )
 
             if pipeline["weapon_gate"].update(weapon_detections):
-                if "weapon_detected" not in detected_warnings:
-                    detected_warnings.append("weapon_detected")
+                if EVENT_WEAPON not in detected_warnings:
+                    detected_warnings.append(EVENT_WEAPON)
 
             if block_event is not None and block_event["should_capture"]:
-                if "camera_blocking" not in detected_warnings:
-                    detected_warnings.append("camera_blocking")
+                if EVENT_CAMERA_BLOCK not in detected_warnings:
+                    detected_warnings.append(EVENT_CAMERA_BLOCK)
 
             if person_event is not None and person_event["triggered"] and person_event["should_capture"]:
-                if "person_near_camera" not in detected_warnings:
-                    detected_warnings.append("person_near_camera")
+                if EVENT_FACE_NEAR not in detected_warnings:
+                    detected_warnings.append(EVENT_FACE_NEAR)
 
             if door_lock_event["triggered"] and door_lock_event["should_capture"]:
                 if door_lock_event["event_name"] not in detected_warnings:

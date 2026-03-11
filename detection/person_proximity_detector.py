@@ -1,5 +1,7 @@
 import time
 
+from event_types import EVENT_FACE_NEAR
+
 
 class PersonProximityDetector:
 
@@ -47,7 +49,7 @@ class PersonProximityDetector:
                     continue
 
                 candidate = {
-                    "class_name": "person_near_camera",
+                    "class_name": EVENT_FACE_NEAR,
                     "confidence": confidence,
                     "bbox": bbox,
                     "area_ratio": area_ratio,
