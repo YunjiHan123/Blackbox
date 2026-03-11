@@ -242,7 +242,7 @@ def main():
                 saver.save(frame, door_lock_event["event_name"])
                 alert_state.activate(
                     frame,
-                    "ALERT  DOOR LOCK TAMPERING",
+                    "ALERT  DOOR LOCK MANIPULATION",
                     door_lock_event["subtitle"],
                 )
                 ensure_alert_window()
