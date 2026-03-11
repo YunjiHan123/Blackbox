@@ -36,6 +36,7 @@ def render_frame(frame, frame_result, pipeline, show_status=True):
             line_color=POSE_LINE_COLOR,
             point_color=POSE_POINT_COLOR,
             connections=POSE_CONNECTIONS,
+            draw_box=False,
         )
 
     for detection in weapon_detections:

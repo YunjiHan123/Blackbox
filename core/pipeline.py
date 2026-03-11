@@ -21,6 +21,7 @@ from settings import (
     PERSON_NEAR_MIN_CONFIDENCE,
     PERSON_NEAR_REQUIRED_TIME_SECONDS,
     POSE_MODEL_PATH,
+    PERSON_MODEL_PATH,
     WEAPON_LABELS,
     WEAPON_MODEL_PATH,
 )
@@ -37,21 +38,23 @@ from utils.detection_gate import DetectionGate
 
 def create_pipeline():
 
-    object_model = YOLO(WEAPON_MODEL_PATH)
+    # Use separate model instances to avoid shared overrides (e.g. classes filter).
+    weapon_model = YOLO(WEAPON_MODEL_PATH)
+    person_model = YOLO(PERSON_MODEL_PATH)
 
     return {
         "weapon_detector": WeaponDetector(
             allowed_labels=WEAPON_LABELS,
-            model=object_model,
+            model=weapon_model,
         ),
         "person_proximity_detector": PersonProximityDetector(
-            model=object_model,
+            model=person_model,
             area_threshold=PERSON_NEAR_AREA_THRESHOLD,
             required_time_seconds=PERSON_NEAR_REQUIRED_TIME_SECONDS,
             min_confidence=PERSON_NEAR_MIN_CONFIDENCE,
             cooldown_seconds=PERSON_NEAR_COOLDOWN_SECONDS,
         ),
-        "person_detector": PersonDetector(model=object_model),
+        "person_detector": PersonDetector(model=person_model),
         "pose_detector": PoseDetector(POSE_MODEL_PATH),
         "camera_block_detector": CameraBlockDetector(
             change_ratio_threshold=CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
