@@ -1,5 +1,7 @@
 from ultralytics import YOLO
 
+from settings import DEVICE
+
 
 class PoseDetector:
 
@@ -9,7 +11,7 @@ class PoseDetector:
 
     def detect(self, frame):
 
-        results = self.model(frame, verbose=False)
+        results = self.model(frame, device=DEVICE, verbose=False)
 
         poses = []
 
