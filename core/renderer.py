@@ -20,7 +20,7 @@ from utils.visualization import (
 )
 
 
-def render_frame(frame, frame_result, pipeline):
+def render_frame(frame, frame_result, pipeline, show_status=True):
 
     weapon_detections = frame_result["weapon_detections"]
     persons = frame_result["persons"]
@@ -93,8 +93,9 @@ def render_frame(frame, frame_result, pipeline):
                 3,
             )
 
-    draw_status(
-        frame,
-        f"camera index: {CAMERA_INDEX} | landscape mode | esc to exit",
-        STATUS_COLOR,
-    )
+    if show_status:
+        draw_status(
+            frame,
+            f"camera index: {CAMERA_INDEX} | landscape mode | esc to exit",
+            STATUS_COLOR,
+        )
