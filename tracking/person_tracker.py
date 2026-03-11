@@ -10,7 +10,7 @@ class PersonTracker:
     def __init__(
         self,
         max_age=180,
-        n_init=2,
+        n_init=5,
         max_cosine_distance=0.3,
         reid_match_threshold=0.72,
         reid_ttl_seconds=120,
