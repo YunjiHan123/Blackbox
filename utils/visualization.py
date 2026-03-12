@@ -56,11 +56,11 @@ def draw_target_box(frame, bbox, color, label=None, value=None, thickness=2):
 
     if label:
         text = label if value is None else f"{label}  {value}"
-        label_width = max(120, len(text) * 9)
+        label_width = max(140, len(text) * 10)
         chip_x1 = max(8, x1 + 6)
         chip_y1 = max(8, y1 + 6)
         chip_x2 = min(frame.shape[1] - 8, chip_x1 + label_width)
-        chip_y2 = min(frame.shape[0] - 8, chip_y1 + 22)
+        chip_y2 = min(frame.shape[0] - 8, chip_y1 + 26)
         chip_bbox = (
             chip_x1,
             chip_y1,
@@ -71,9 +71,9 @@ def draw_target_box(frame, bbox, color, label=None, value=None, thickness=2):
         cv2.putText(
             frame,
             text,
-            (chip_bbox[0] + 8, chip_bbox[1] + 15),
+            (chip_bbox[0] + 8, chip_bbox[1] + 18),
             cv2.FONT_HERSHEY_DUPLEX,
-            0.45,
+            0.52,
             color,
             1,
             cv2.LINE_AA,
