@@ -12,7 +12,7 @@ def collect_detected_warnings(frame_result, pipeline, detected_warnings):
     _append_if_detected(
         detected_warnings,
         EVENT_WEAPON,
-        bool(pipeline["weapon_gate"].update(frame_result["weapon_detections"])),
+        bool(frame_result["weapon_alert_detections"]),
     )
     _append_if_detected(
         detected_warnings,
