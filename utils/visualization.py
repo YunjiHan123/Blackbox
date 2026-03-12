@@ -58,9 +58,12 @@ def draw_status(frame, message, color):
     )
 
 
-def draw_roi(frame, bbox, label, color, thickness=2):
+def draw_roi(frame, bbox, label, color, thickness=2, extend_to_bottom=False):
 
     x1, y1, x2, y2 = bbox
+    if extend_to_bottom:
+        y2 = frame.shape[0] - 1
+
     cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness, cv2.LINE_AA)
     cv2.putText(
         frame,

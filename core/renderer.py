@@ -59,6 +59,14 @@ def render_frame(frame, frame_result, pipeline, show_status=True):
         "Door Lock",
         door_lock_event["color"],
         thickness=3 if door_lock_event["target_wrist"] is not None else 2,
+        extend_to_bottom=True,
+    )
+    draw_roi(
+        frame,
+        door_lock_event["contact_band"],
+        "Lock Contact",
+        door_lock_event["color"],
+        thickness=2,
     )
 
     if door_lock_event["target_wrist"] is not None:
