@@ -57,17 +57,21 @@ def draw_target_box(frame, bbox, color, label=None, value=None, thickness=2):
     if label:
         text = label if value is None else f"{label}  {value}"
         label_width = max(120, len(text) * 9)
+        chip_x1 = max(8, x1 + 6)
+        chip_y1 = max(8, y1 + 6)
+        chip_x2 = min(frame.shape[1] - 8, chip_x1 + label_width)
+        chip_y2 = min(frame.shape[0] - 8, chip_y1 + 22)
         chip_bbox = (
-            x1,
-            max(8, y1 - 30),
-            min(frame.shape[1] - 8, x1 + label_width),
-            max(8, y1 - 8),
+            chip_x1,
+            chip_y1,
+            chip_x2,
+            chip_y2,
         )
         draw_panel(frame, chip_bbox, color, alpha=0.2, border_color=color)
         cv2.putText(
             frame,
             text,
-            (chip_bbox[0] + 8, chip_bbox[3] - 8),
+            (chip_bbox[0] + 8, chip_bbox[1] + 15),
             cv2.FONT_HERSHEY_DUPLEX,
             0.45,
             color,
