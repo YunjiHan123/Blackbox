@@ -54,8 +54,7 @@ def process_frame_events(
     )
     _process_weapon_events(
         frame,
-        frame_result["weapon_detections"],
-        pipeline,
+        frame_result["weapon_alert_detections"],
         logger,
         saver,
         alert_state,
@@ -179,15 +178,14 @@ def _process_camera_block_event(
 
 def _process_weapon_events(
     frame,
-    weapon_detections,
-    pipeline,
+    weapon_alert_detections,
     logger,
     saver,
     alert_state,
     ensure_alert_window,
 ):
 
-    for detection in pipeline["weapon_gate"].update(weapon_detections):
+    for detection in weapon_alert_detections:
         label = detection["class_name"]
         confidence = detection["confidence"]
         handle_event(

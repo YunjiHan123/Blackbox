@@ -1,5 +1,6 @@
 import time
 from collections import deque
+from math import hypot
 
 from core.event_types import EVENT_DOOR_LOCK_MANIPULATION, EVENT_LABELS
 
@@ -51,6 +52,82 @@ class DoorLockDetector:
         self.zone_entered_at = None
         self.accumulated_seconds = 0.0
         self.missed_since = None
+
+    def _build_event(self, roi, active_roi, contact_roi, contact_band, target_wrist, pose_metrics):
+        return {
+            "roi": roi,
+            "active_roi": active_roi,
+            "contact_roi": contact_roi,
+            "contact_band": contact_band,
+            "target_wrist": target_wrist,
+            "frames_in_zone": self.wrist_in_zone_frames,
+            "elapsed_seconds": 0.0,
+            "countdown_seconds": self.required_seconds,
+            "triggered": False,
+            "should_capture": False,
+            "event_name": None,
+            "subtitle": None,
+            "color": (0, 0, 0),
+            "movement_dx": 0,
+            "movement_dy": 0,
+            "movement_detected": False,
+            "person_is_close": pose_metrics is not None,
+        }
+
+    def _reset_presence_state(self):
+        self.wrist_in_zone_frames = 0
+        self.movement_history.clear()
+        self.zone_entered_at = None
+        self.accumulated_seconds = 0.0
+        self.missed_since = None
+
+    def _decay_presence_state(self):
+        self.wrist_in_zone_frames = max(0, self.wrist_in_zone_frames - self.decay_frames)
+        for _ in range(min(self.decay_frames, len(self.movement_history))):
+            self.movement_history.pop()
+
+    def _update_elapsed_event(self, event, elapsed_seconds):
+        event["frames_in_zone"] = self.wrist_in_zone_frames
+        event["elapsed_seconds"] = elapsed_seconds
+        event["countdown_seconds"] = max(0.0, self.required_seconds - elapsed_seconds)
+
+    def _is_wrist_extended(self, pose, wrist_index, wrist_point, hand_point, pose_metrics):
+        shoulder_index = 5 if wrist_index == 9 else 6
+        shoulder_x, shoulder_y, shoulder_confidence = pose["keypoints"][shoulder_index]
+        if shoulder_confidence < self.wrist_confidence_threshold:
+            return True
+
+        min_distance = max(
+            self.min_wrist_distance_pixels,
+            pose_metrics["body_scale"] * self.wrist_distance_shoulder_ratio,
+        )
+        wrist_distance = hypot(wrist_point[0] - shoulder_x, wrist_point[1] - shoulder_y)
+        hand_distance = hypot(hand_point[0] - shoulder_x, hand_point[1] - shoulder_y)
+        return max(wrist_distance, hand_distance) >= min_distance
+
+    def _compute_movement(self):
+        xs = [point[0] for point in self.movement_history]
+        ys = [point[1] for point in self.movement_history]
+        dx = max(xs) - min(xs)
+        dy = max(ys) - min(ys)
+        return dx, dy, max(dx, dy) >= self.movement_delta_threshold
+
+    def _handle_missing_target(self, event, now):
+        if self.missed_since is None:
+            if self.zone_entered_at is not None:
+                self.accumulated_seconds += max(0.0, now - self.zone_entered_at)
+                self.zone_entered_at = None
+            self.missed_since = now
+
+        missed_duration = now - self.missed_since
+        if missed_duration < self.miss_grace_seconds:
+            self._decay_presence_state()
+            self._update_elapsed_event(event, self.accumulated_seconds)
+            return event
+
+        self._reset_presence_state()
+        self._update_elapsed_event(event, 0.0)
+        return event
 
     def _compute_roi(self, frame):
 
@@ -166,6 +243,15 @@ class DoorLockDetector:
                 wrist_point = (int(x), int(y))
                 hand_point = self._project_hand_point(pose, wrist_index, wrist_point)
 
+                if not self._is_wrist_extended(
+                    pose,
+                    wrist_index,
+                    wrist_point,
+                    hand_point,
+                    pose_metrics,
+                ):
+                    continue
+
                 if not self._point_in_roi(wrist_point, active_roi) and not self._point_in_roi(hand_point, active_roi):
                     continue
 
@@ -179,50 +265,17 @@ class DoorLockDetector:
             if target_wrist is not None:
                 break
 
-        event = {
-            "roi": roi,
-            "active_roi": active_roi,
-            "contact_roi": contact_roi,
-            "contact_band": contact_band,
-            "target_wrist": target_wrist,
-            "frames_in_zone": self.wrist_in_zone_frames,
-            "elapsed_seconds": 0.0,
-            "countdown_seconds": self.required_seconds,
-            "triggered": False,
-            "should_capture": False,
-            "event_name": None,
-            "subtitle": None,
-            "color": (0, 0, 0),
-            "movement_dx": 0,
-            "movement_dy": 0,
-            "movement_detected": False,
-            "person_is_close": target_pose_metrics is not None,
-        }
+        event = self._build_event(
+            roi,
+            active_roi,
+            contact_roi,
+            contact_band,
+            target_wrist,
+            target_pose_metrics,
+        )
 
         if target_wrist is None:
-            if self.missed_since is None:
-                if self.zone_entered_at is not None:
-                    self.accumulated_seconds += max(0.0, now - self.zone_entered_at)
-                    self.zone_entered_at = None
-                self.missed_since = now
-
-            missed_duration = now - self.missed_since
-            event["elapsed_seconds"] = self.accumulated_seconds
-            event["countdown_seconds"] = max(0.0, self.required_seconds - event["elapsed_seconds"])
-
-            if missed_duration < self.miss_grace_seconds:
-                event["frames_in_zone"] = self.wrist_in_zone_frames
-                return event
-
-            self.wrist_in_zone_frames = 0
-            self.movement_history.clear()
-            self.zone_entered_at = None
-            self.accumulated_seconds = 0.0
-            self.missed_since = None
-            event["frames_in_zone"] = self.wrist_in_zone_frames
-            event["elapsed_seconds"] = 0.0
-            event["countdown_seconds"] = self.required_seconds
-            return event
+            return self._handle_missing_target(event, now)
 
         self.missed_since = None
         if self.zone_entered_at is None:
@@ -232,19 +285,13 @@ class DoorLockDetector:
         self.movement_history.append(target_wrist)
         elapsed_seconds = self.accumulated_seconds + max(0.0, now - self.zone_entered_at)
         event["target_wrist"] = target_wrist
-        event["frames_in_zone"] = self.wrist_in_zone_frames
-        event["elapsed_seconds"] = elapsed_seconds
-        event["countdown_seconds"] = max(0.0, self.required_seconds - elapsed_seconds)
+        self._update_elapsed_event(event, elapsed_seconds)
         event["color"] = (0, 165, 255)
 
         if elapsed_seconds < self.required_seconds:
             return event
 
-        xs = [point[0] for point in self.movement_history]
-        ys = [point[1] for point in self.movement_history]
-        dx = max(xs) - min(xs)
-        dy = max(ys) - min(ys)
-        movement_detected = max(dx, dy) >= self.movement_delta_threshold
+        dx, dy, movement_detected = self._compute_movement()
 
         event_name = EVENT_DOOR_LOCK_MANIPULATION
         subtitle = EVENT_LABELS[EVENT_DOOR_LOCK_MANIPULATION]
