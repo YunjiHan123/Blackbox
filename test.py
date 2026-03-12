@@ -19,6 +19,7 @@ LABELS_PATH = ROOT / "test_data" / "labels.json"
 WINDOW_NAME = "Evaluation"
 RESULT_HOLD_MS = 800
 SKIP_KEY = ord("s")
+SUMMARY_PLOT_PATH = ROOT / "test_data" / "summary_metrics.png"
 
 IMPLEMENTED_WARNINGS = {
     EVENT_WEAPON,
@@ -171,7 +172,7 @@ def model(video_path, runtime, expected_warnings, video_name, progress_text):
 
             status = "RUNNING"
             if any(warning in expected_warnings for warning in detected_warnings):
-                status = "PASS"
+                status = "HIT"
             elif detected_warnings:
                 status = "DETECTED"
 
@@ -193,8 +194,6 @@ def model(video_path, runtime, expected_warnings, video_name, progress_text):
                 skipped = True
                 break
 
-            if any(warning in expected_warnings for warning in detected_warnings):
-                break
     finally:
         capture.release()
 
@@ -232,6 +231,10 @@ def test(model_fn, dataset, runtime):
     pass_count = 0
     fail_count = 0
     skip_count = 0
+    total_tp = 0
+    total_fp = 0
+    total_fn = 0
+    total_tn = 0
 
     for index, item in enumerate(dataset, start=1):
         print(f"Processing [{index}/{total_cases}] {item['file']} ...")
@@ -247,22 +250,34 @@ def test(model_fn, dataset, runtime):
             progress_text=progress_text,
         )
         detected = model_result["detected"]
-        passed = any(warning in item["expected_warnings"] for warning in detected)
+        expected_all = item["expected_warnings"]
+        supported_expected = [warning for warning in expected_all if warning in IMPLEMENTED_WARNINGS]
+        unsupported_expected = [warning for warning in expected_all if warning not in IMPLEMENTED_WARNINGS]
+        expected_set = set(supported_expected)
+        detected_set = set(detected)
+        tp = len(expected_set & detected_set)
+        fp = len(detected_set - expected_set)
+        fn = len(expected_set - detected_set)
+        tn = len(IMPLEMENTED_WARNINGS - expected_set - detected_set)
+        passed = (fn == 0 and fp == 0)
         skipped = model_result["skipped"]
         result = {
             "video": item["file"],
             "status": "SKIP" if skipped else ("PASS" if passed else "FAIL"),
-            "expected": item["expected_warnings"],
-            "unsupported": [],
+            "expected": expected_all,
+            "unsupported": unsupported_expected,
             "detected": detected,
-            "missing": [] if passed or skipped else item["expected_warnings"],
-            "unexpected": [] if passed or skipped else [
-                warning for warning in detected if warning not in item["expected_warnings"]
-            ],
+            "missing": [] if passed or skipped else [warning for warning in supported_expected if warning not in detected_set],
+            "unexpected": [] if passed or skipped else [warning for warning in detected if warning not in expected_set],
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+            "tn": tn,
         }
         print(
             f"  -> {result['status']} "
-            f"(detected: {', '.join(detected) if detected else '-'})"
+            f"(detected: {', '.join(detected) if detected else '-'} | "
+            f"tp {tp} fp {fp} fn {fn} tn {tn})"
         )
 
         if result["status"] == "PASS":
@@ -271,6 +286,11 @@ def test(model_fn, dataset, runtime):
             fail_count += 1
         elif result["status"] == "SKIP":
             skip_count += 1
+        if result["status"] != "SKIP":
+            total_tp += tp
+            total_fp += fp
+            total_fn += fn
+            total_tn += tn
 
         result_progress_text = (
             f"progress {index}/{total_cases} | "
@@ -307,6 +327,10 @@ def test(model_fn, dataset, runtime):
         "total": len(scored_results),
         "skipped": len(results) - len(scored_results),
         "results": results,
+        "tp": total_tp,
+        "fp": total_fp,
+        "fn": total_fn,
+        "tn": total_tn,
     }
 
 
@@ -327,10 +351,39 @@ def main():
         print(f"  detected: {', '.join(result['detected']) if result['detected'] else '-'}")
         print(f"  missing: {', '.join(result['missing']) if result['missing'] else '-'}")
         print(f"  unexpected: {', '.join(result['unexpected']) if result['unexpected'] else '-'}")
+        if result["status"] != "SKIP":
+            print(
+                f"  counts: tp {result['tp']} fp {result['fp']} fn {result['fn']} tn {result['tn']}"
+            )
 
     print()
     print(f"Score: {summary['score']} / {summary['total']}")
     print(f"Skipped: {summary['skipped']}")
+    print(f"Totals: tp {summary['tp']} fp {summary['fp']} fn {summary['fn']} tn {summary['tn']}")
+
+    _save_summary_plot(summary, SUMMARY_PLOT_PATH)
+    print(f"Summary plot saved: {SUMMARY_PLOT_PATH}")
+
+
+def _save_summary_plot(summary, output_path):
+
+    try:
+        import matplotlib.pyplot as plt
+    except ModuleNotFoundError:
+        print("matplotlib not installed; skipping summary plot.")
+        return
+
+    labels = ["TP", "FP", "FN", "TN"]
+    values = [summary["tp"], summary["fp"], summary["fn"], summary["tn"]]
+    colors = ["#2ca02c", "#d62728", "#ff7f0e", "#1f77b4"]
+
+    plt.figure(figsize=(6, 4))
+    plt.bar(labels, values, color=colors)
+    plt.title("Evaluation Summary (All Videos)")
+    plt.ylabel("Count")
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
 
 
 if __name__ == "__main__":
