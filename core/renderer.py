@@ -3,6 +3,7 @@ import cv2
 from settings import (
     ALERT_BANNER_COLOR,
     CAMERA_INDEX,
+    CAMERA_MIRROR,
     PERSON_TRACK_COLOR,
     POSE_COLOR,
     POSE_CONNECTIONS,
@@ -97,6 +98,6 @@ def render_frame(frame, frame_result, pipeline, show_status=True):
     if show_status:
         draw_status(
             frame,
-            f"camera index: {CAMERA_INDEX} | landscape mode | esc to exit",
+            f"camera index: {CAMERA_INDEX} | mirror: {'on' if CAMERA_MIRROR else 'off'} | esc to exit",
             STATUS_COLOR,
         )

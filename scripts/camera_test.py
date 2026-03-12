@@ -4,6 +4,7 @@ from ultralytics import YOLO
 from settings import (
     CAMERA_BUFFER_SIZE,
     CAMERA_INDEX,
+    CAMERA_MIRROR,
     FRAME_HEIGHT,
     FRAME_WIDTH,
     MAIN_WINDOW_HEIGHT,
@@ -129,6 +130,7 @@ def main():
     print(f"requested capture={FRAME_WIDTH}x{FRAME_HEIGHT}")
     print(f"actual capture={actual_capture_width}x{actual_capture_height}")
     print(f"rotation={PORTRAIT_ROTATION}")
+    print(f"mirror={CAMERA_MIRROR}")
     print(
         f"window target={MAIN_WINDOW_WIDTH}x{MAIN_WINDOW_HEIGHT} "
         f"at ({MAIN_WINDOW_X}, {MAIN_WINDOW_Y})"
@@ -155,6 +157,9 @@ def main():
 
         if PORTRAIT_ROTATION is not None:
             frame = cv2.rotate(frame, PORTRAIT_ROTATION)
+
+        if CAMERA_MIRROR:
+            frame = cv2.flip(frame, 1)
 
         pose_results = pose_model(frame, verbose=False)
         my_results = my_model(frame, verbose=False)

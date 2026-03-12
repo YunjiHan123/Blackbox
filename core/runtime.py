@@ -14,6 +14,7 @@ from settings import (
     ALERT_WINDOW_NAME,
     CAMERA_BUFFER_SIZE,
     CAMERA_INDEX,
+    CAMERA_MIRROR,
     DELETE_OUTPUTS_ON_EXIT,
     FRAME_HEIGHT,
     FRAME_WIDTH,
@@ -38,6 +39,7 @@ def run_camera_runtime(pipeline):
         frame_height=FRAME_HEIGHT,
         rotation=PORTRAIT_ROTATION,
         buffer_size=CAMERA_BUFFER_SIZE,
+        mirror=CAMERA_MIRROR,
     )
 
     if camera.open() is None:
@@ -46,7 +48,8 @@ def run_camera_runtime(pipeline):
 
     print(
         f"Camera connected: index={CAMERA_INDEX}, "
-        f"resolution={FRAME_WIDTH}x{FRAME_HEIGHT}"
+        f"resolution={FRAME_WIDTH}x{FRAME_HEIGHT}, "
+        f"mirror={CAMERA_MIRROR}"
     )
 
     _setup_main_window()
