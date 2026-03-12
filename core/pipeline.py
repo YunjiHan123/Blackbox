@@ -31,6 +31,9 @@ from settings import (
     LOITERING_THRESHOLD_SECONDS,
     PERSON_NEAR_AREA_THRESHOLD,
     PERSON_NEAR_COOLDOWN_SECONDS,
+    PERSON_NEAR_HEAD_AREA_THRESHOLD,
+    PERSON_NEAR_HEAD_KEYPOINT_CONFIDENCE,
+    PERSON_NEAR_MIN_VISIBLE_FACE_POINTS,
     PERSON_NEAR_MIN_CONFIDENCE,
     PERSON_NEAR_REQUIRED_TIME_SECONDS,
     PERSON_MODEL_PATH,
@@ -83,6 +86,9 @@ def create_pipeline():
             required_time_seconds=PERSON_NEAR_REQUIRED_TIME_SECONDS,
             min_confidence=PERSON_NEAR_MIN_CONFIDENCE,
             cooldown_seconds=PERSON_NEAR_COOLDOWN_SECONDS,
+            head_area_threshold=PERSON_NEAR_HEAD_AREA_THRESHOLD,
+            head_keypoint_confidence=PERSON_NEAR_HEAD_KEYPOINT_CONFIDENCE,
+            min_visible_face_points=PERSON_NEAR_MIN_VISIBLE_FACE_POINTS,
         ),
         "person_detector": PersonDetector(model=person_model),
         "pose_detector": PoseDetector(POSE_MODEL_PATH),
@@ -155,6 +161,7 @@ def analyze_frame(pipeline, frame, timestamp=None):
     block_event = pipeline["camera_block_detector"].analyze(frame, timestamp=timestamp)
     person_near_event = pipeline["person_proximity_detector"].analyze(
         frame,
+        poses=poses,
         timestamp=timestamp,
     )
     door_lock_event = pipeline["door_lock_detector"].analyze(
