@@ -122,13 +122,15 @@ def _render_block_overlay(frame, block_event):
         return
 
     metrics = block_event["metrics"]
+    label = "BLOCKED" if block_event["triggered"] else "BLOCK RISK"
     cv2.putText(
         frame,
         (
-            "BLOCK RISK "
+            f"{label} "
             f"BRI {metrics['brightness']:.0f}  "
             f"STD {metrics['pixel_std']:.0f}  "
-            f"DELTA {metrics['change_ratio']:.2f}"
+            f"DELTA {metrics['change_ratio']:.2f}  "
+            f"HITS {block_event['consecutive_hits']}"
         ),
         (24, 160),
         cv2.FONT_HERSHEY_DUPLEX,

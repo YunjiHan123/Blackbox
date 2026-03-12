@@ -3,8 +3,13 @@ from ultralytics import YOLO
 from settings import (
     CAMERA_BLOCK_CAPTURE_INTERVAL_SECONDS,
     CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
+    CAMERA_BLOCK_FLOW_THRESHOLD,
+    CAMERA_BLOCK_HIST_THRESHOLD,
     CAMERA_BLOCK_MIN_BRIGHTNESS,
+    CAMERA_BLOCK_MIN_EDGE_RATIO,
     CAMERA_BLOCK_MIN_PIXEL_STD,
+    CAMERA_BLOCK_MIN_TEXTURE,
+    CAMERA_BLOCK_REQUIRED_CONSECUTIVE_FRAMES,
     DOOR_LOCK_COOLDOWN_SECONDS,
     DOOR_LOCK_CONTACT_ROI_HEIGHT_RATIO,
     DOOR_LOCK_CONTACT_ROI_WIDTH_RATIO,
@@ -26,6 +31,9 @@ from settings import (
     LOITERING_THRESHOLD_SECONDS,
     PERSON_NEAR_AREA_THRESHOLD,
     PERSON_NEAR_COOLDOWN_SECONDS,
+    PERSON_NEAR_HEAD_AREA_THRESHOLD,
+    PERSON_NEAR_HEAD_KEYPOINT_CONFIDENCE,
+    PERSON_NEAR_MIN_VISIBLE_FACE_POINTS,
     PERSON_NEAR_MIN_CONFIDENCE,
     PERSON_NEAR_REQUIRED_TIME_SECONDS,
     PERSON_MODEL_PATH,
@@ -78,6 +86,9 @@ def create_pipeline():
             required_time_seconds=PERSON_NEAR_REQUIRED_TIME_SECONDS,
             min_confidence=PERSON_NEAR_MIN_CONFIDENCE,
             cooldown_seconds=PERSON_NEAR_COOLDOWN_SECONDS,
+            head_area_threshold=PERSON_NEAR_HEAD_AREA_THRESHOLD,
+            head_keypoint_confidence=PERSON_NEAR_HEAD_KEYPOINT_CONFIDENCE,
+            min_visible_face_points=PERSON_NEAR_MIN_VISIBLE_FACE_POINTS,
         ),
         "person_detector": PersonDetector(model=person_model),
         "pose_detector": PoseDetector(POSE_MODEL_PATH),
@@ -85,6 +96,11 @@ def create_pipeline():
             change_ratio_threshold=CAMERA_BLOCK_CHANGE_RATIO_THRESHOLD,
             min_brightness=CAMERA_BLOCK_MIN_BRIGHTNESS,
             min_pixel_std=CAMERA_BLOCK_MIN_PIXEL_STD,
+            min_texture=CAMERA_BLOCK_MIN_TEXTURE,
+            min_edge_ratio=CAMERA_BLOCK_MIN_EDGE_RATIO,
+            hist_threshold=CAMERA_BLOCK_HIST_THRESHOLD,
+            flow_threshold=CAMERA_BLOCK_FLOW_THRESHOLD,
+            required_consecutive_frames=CAMERA_BLOCK_REQUIRED_CONSECUTIVE_FRAMES,
             capture_interval_seconds=CAMERA_BLOCK_CAPTURE_INTERVAL_SECONDS,
         ),
         "door_lock_detector": DoorLockDetector(
@@ -145,6 +161,7 @@ def analyze_frame(pipeline, frame, timestamp=None):
     block_event = pipeline["camera_block_detector"].analyze(frame, timestamp=timestamp)
     person_near_event = pipeline["person_proximity_detector"].analyze(
         frame,
+        poses=poses,
         timestamp=timestamp,
     )
     door_lock_event = pipeline["door_lock_detector"].analyze(

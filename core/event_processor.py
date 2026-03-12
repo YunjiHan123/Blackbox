@@ -157,7 +157,11 @@ def _process_camera_block_event(
     ensure_alert_window,
 ):
 
-    if block_event is None or not block_event["should_capture"]:
+    if (
+        block_event is None
+        or not block_event["triggered"]
+        or not block_event["should_capture"]
+    ):
         return
 
     handle_event(
