@@ -17,6 +17,7 @@ class CameraBlockDetector:
         min_edge_ratio=0.02,
         hist_threshold=0.4,
         flow_threshold=2.0,
+        required_consecutive_frames=4,
         capture_interval_seconds=1.0,
     ):
 
@@ -27,11 +28,13 @@ class CameraBlockDetector:
         self.min_edge_ratio = min_edge_ratio
         self.hist_threshold = hist_threshold
         self.flow_threshold = flow_threshold
+        self.required_consecutive_frames = required_consecutive_frames
         self.capture_interval_seconds = capture_interval_seconds
         self.prev_gray = None
         self.last_capture_time = 0.0
         self.prev_hist = None
         self.prev_gray_small = None
+        self.consecutive_hits = 0
 
     def analyze(self, frame, timestamp=None):
 
@@ -95,6 +98,7 @@ class CameraBlockDetector:
 
             score = 0
             reasons = []
+            block_signals = 0
 
             if change_ratio > self.change_ratio_threshold:
                 score += 1
@@ -103,14 +107,22 @@ class CameraBlockDetector:
             if brightness < self.min_brightness:
                 score += 1
                 reasons.append("dark_frame")
+                block_signals += 1
+
+            if pixel_std < self.min_pixel_std:
+                score += 1
+                reasons.append("low_pixel_std")
+                block_signals += 1
 
             if texture_var < self.min_texture:
                 score += 1
                 reasons.append("low_texture")
+                block_signals += 1
 
             if edge_ratio < self.min_edge_ratio:
                 score += 1
                 reasons.append("low_edges")
+                block_signals += 1
 
             if hist_change > self.hist_threshold:
                 score += 1
@@ -120,7 +132,13 @@ class CameraBlockDetector:
                 score += 1
                 reasons.append("camera_motion")
 
-            if score >= 2:
+            is_candidate = score >= 2 and block_signals >= 1
+            if is_candidate:
+                self.consecutive_hits += 1
+            else:
+                self.consecutive_hits = 0
+
+            if score > 0:
 
                 now = time.time() if timestamp is None else timestamp
 
@@ -129,19 +147,29 @@ class CameraBlockDetector:
                     > self.capture_interval_seconds
                 )
 
-                if should_capture:
+                triggered = self.consecutive_hits >= self.required_consecutive_frames
+
+                if triggered and should_capture:
                     self.last_capture_time = now
 
                 event = {
                     "class_name": EVENT_CAMERA_BLOCK,
-                    "confidence": 1.0,
+                    "confidence": min(1.0, score / 4.0),
                     "reasons": reasons,
                     "metrics": {
                         "change_ratio": change_ratio,
                         "brightness": brightness,
                         "pixel_std": pixel_std,
+                        "texture_var": float(texture_var),
+                        "edge_ratio": float(edge_ratio),
+                        "hist_change": float(hist_change),
+                        "flow_mag": float(flow_mag),
                     },
-                    "should_capture": should_capture,
+                    "score": score,
+                    "candidate": is_candidate,
+                    "triggered": triggered,
+                    "consecutive_hits": self.consecutive_hits,
+                    "should_capture": triggered and should_capture,
                 }
 
         self.prev_gray = gray
