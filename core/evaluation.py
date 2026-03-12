@@ -2,12 +2,22 @@ from core.event_types import (
     EVENT_CAMERA_BLOCK,
     EVENT_DOOR_LOCK_MANIPULATION,
     EVENT_FACE_NEAR,
+    EVENT_LOITERING,
     EVENT_WEAPON,
 )
 from core.renderer import render_frame
 
 
-def collect_detected_warnings(frame_result, pipeline, detected_warnings):
+def collect_detected_warnings(frame_result, pipeline, detected_warnings, timestamp=None):
+
+    for person in frame_result["persons"]:
+        person_id = person["id"]
+        if timestamp is None:
+            triggered = pipeline["loitering_detector"].update(person_id)
+        else:
+            triggered = pipeline["loitering_detector"].update_with_timestamp(person_id, timestamp)
+        if triggered:
+            _append_if_detected(detected_warnings, EVENT_LOITERING, True)
 
     _append_if_detected(
         detected_warnings,
