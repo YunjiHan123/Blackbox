@@ -21,6 +21,7 @@ MAIN_WINDOW_HEIGHT = 720
 ALERT_WINDOW_GAP = 24
 
 CAMERA_INDEX = _local_or_default("CAMERA_INDEX", 2)
+CAMERA_MIRROR = _local_or_default("CAMERA_MIRROR", False)
 DEVICE = _local_or_default("DEVICE", "cuda:0")
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
