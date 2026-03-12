@@ -138,6 +138,7 @@ def create_pipeline():
 def analyze_frame(pipeline, frame, timestamp=None):
 
     weapon_detections = pipeline["weapon_detector"].detect(frame)
+    weapon_alert_detections = pipeline["weapon_gate"].update(weapon_detections)
     person_detections = pipeline["person_detector"].detect(frame)
     persons = pipeline["person_tracker"].update(person_detections, frame)
     poses = pipeline["pose_detector"].detect(frame)
@@ -154,6 +155,7 @@ def analyze_frame(pipeline, frame, timestamp=None):
 
     return {
         "weapon_detections": weapon_detections,
+        "weapon_alert_detections": weapon_alert_detections,
         "persons": persons,
         "poses": poses,
         "block_event": block_event,
