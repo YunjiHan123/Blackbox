@@ -54,7 +54,9 @@ REID_SIZE_WEIGHT = _local_or_default("REID_SIZE_WEIGHT", 0.10)
 REID_HIST_BLEND_ALPHA = _local_or_default("REID_HIST_BLEND_ALPHA", 0.20)
 REID_ORB_DISTANCE_THRESHOLD = _local_or_default("REID_ORB_DISTANCE_THRESHOLD", 42)
 REID_PROFILE_HISTORY = _local_or_default("REID_PROFILE_HISTORY", 6)
-REID_MODEL_PATH = _local_or_default("REID_MODEL_PATH", "models/person_reid.onnx")
+REID_MODEL_PATH = _local_or_default(
+    "REID_MODEL_PATH", "models/person-reidentification-retail-0288.xml"
+)
 REID_INPUT_WIDTH = _local_or_default("REID_INPUT_WIDTH", 128)
 REID_INPUT_HEIGHT = _local_or_default("REID_INPUT_HEIGHT", 256)
 REID_MIN_EMBEDDING_SIMILARITY = _local_or_default("REID_MIN_EMBEDDING_SIMILARITY", 0.82)

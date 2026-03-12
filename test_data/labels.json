@@ -3,145 +3,67 @@
     {
       "file": "door_lock_manipulation_1.MOV",
       "expected_warnings": [
-        "door_lock_manipulation"
+        "door_lock_manipulation", "weapon", "face_near"
       ]
     },
     {
       "file": "door_lock_manipulation_2.MOV",
       "expected_warnings": [
-        "door_lock_manipulation"
+        "door_lock_manipulation", "camera_block", "face_near"
       ]
     },
     {
       "file": "door_lock_manipulation_3.MOV",
       "expected_warnings": [
-        "door_lock_manipulation"
+        "weapon", "camera_block", "face_near"
       ]
     },
     {
       "file": "door_lock_manipulation_4.MOV",
       "expected_warnings": [
-        "door_lock_manipulation"
+        "door_lock_manipulation", "weapon", "camera_block"
       ]
     },
     {
-      "file": "weapon_1.MOV",
+      "file": "5.MOV",
       "expected_warnings": [
-        "weapon"
+        "loitering", "door_lock_manipulation", "weapon"
       ]
     },
     {
-      "file": "weapon_2.MOV",
+      "file": "6.MOV",
       "expected_warnings": [
-        "weapon"
+        "loitering", "weapon", "camera_block"
       ]
     },
     {
-      "file": "weapon_3.MOV",
+      "file": "7.MOV",
       "expected_warnings": [
-        "weapon"
+        "loitering", "weapon", "face_near"
       ]
     },
     {
-      "file": "weapon_4.MOV",
+      "file": "8.MOV",
       "expected_warnings": [
-        "weapon"
+        "door_lock_manipulation", "face_near"
       ]
     },
     {
-      "file": "weapon_5.MOV",
+      "file": "9.MOV",
       "expected_warnings": [
-        "weapon"
+        "door_lock_manipulation", "camera_block"
       ]
     },
     {
-      "file": "weapon_6.MOV",
+      "file": "10.MOV",
       "expected_warnings": [
-        "weapon"
+        "door_lock_manipulation", "weapon"
       ]
     },
     {
-      "file": "camera_block_1.MOV",
+      "file": "11.MOV",
       "expected_warnings": [
-        "camera_block"
-      ]
-    },
-    {
-      "file": "camera_block_2.MOV",
-      "expected_warnings": [
-        "camera_block"
-      ]
-    },
-    {
-      "file": "camera_block_3.MOV",
-      "expected_warnings": [
-        "camera_block"
-      ]
-    },
-    {
-      "file": "camera_block_4.MOV",
-      "expected_warnings": [
-        "camera_block"
-      ]
-    },
-    {
-      "file": "face_near_1.MOV",
-      "expected_warnings": [
-        "face_near"
-      ]
-    },
-    {
-      "file": "face_near_2.MOV",
-      "expected_warnings": [
-        "face_near"
-      ]
-    },
-    {
-      "file": "face_near_3.MOV",
-      "expected_warnings": [
-        "face_near"
-      ]
-    },
-    {
-      "file": "face_near_4.MOV",
-      "expected_warnings": [
-        "face_near"
-      ]
-    },
-    {
-      "file": "loitering_1.MOV",
-      "expected_warnings": [
-        "loitering"
-      ]
-    },
-    {
-      "file": "loitering_2.MOV",
-      "expected_warnings": [
-        "loitering"
-      ]
-    },
-    {
-      "file": "loitering_3.MOV",
-      "expected_warnings": [
-        "loitering"
-      ]
-    },
-    {
-      "file": "loitering_4.MOV",
-      "expected_warnings": [
-        "loitering"
-      ]
-    },
-    {
-      "file": "loitering_5.MOV",
-      "expected_warnings": [
-        "loitering"
-      ]
-    },
-    {
-      "file": "loitering_6.MOV",
-      "expected_warnings": [
-        "loitering"
+        "loitering", "weapon", "camera_block"
       ]
     }
   ]

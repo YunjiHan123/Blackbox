@@ -19,7 +19,11 @@ class OnnxReIDEmbedder:
             return
 
         try:
-            self.net = cv2.dnn.readNetFromONNX(model_path)
+            ext = os.path.splitext(model_path)[1].lower()
+            if ext == ".onnx":
+                self.net = cv2.dnn.readNetFromONNX(model_path)
+            else:
+                self.net = cv2.dnn.readNet(model_path)
             self.output_dim = self._infer_output_dim()
         except cv2.error:
             self.net = None

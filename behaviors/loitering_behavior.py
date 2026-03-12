@@ -9,7 +9,10 @@ class LoiteringDetector:
         self.person_data = {}
 
     def update(self, person_id):
-        now = time.time()
+        return self.update_with_timestamp(person_id, time.time())
+
+    def update_with_timestamp(self, person_id, timestamp_seconds):
+        now = timestamp_seconds
         data = self.person_data.get(person_id)
 
         if data is None:
@@ -20,7 +23,7 @@ class LoiteringDetector:
             }
             return False
 
-        time_since_last = now - data["last_seen"]
+        time_since_last = max(0.0, now - data["last_seen"])
         if time_since_last > self.disappear_reset:
             self.person_data[person_id] = {
                 "last_seen": now,
