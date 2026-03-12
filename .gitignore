@@ -7,5 +7,6 @@ outputs/
 
 models/yolo11n.pt
 models/yolo11n-pose.pt
+models/person_reid.onnx
 
 settings/config_local.py

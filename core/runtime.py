@@ -5,7 +5,7 @@ from core.event_processor import process_frame_events
 from core.frame_saver import FrameSaver
 from core.logger import Logger
 from core.pipeline import analyze_frame
-from core.renderer import render_frame
+from core.renderer import render_alert_frame, render_frame
 from settings import (
     ALERT_BANNER_COLOR,
     ALERT_HOLD_SECONDS,
@@ -63,7 +63,7 @@ def run_camera_runtime(pipeline):
                 break
 
             frame_result = analyze_frame(pipeline, frame)
-            render_frame(frame, frame_result, pipeline)
+            alert_state.clear_if_expired()
             process_frame_events(
                 frame,
                 frame_result,
@@ -73,6 +73,7 @@ def run_camera_runtime(pipeline):
                 alert_state,
                 ensure_alert_window,
             )
+            render_frame(frame, frame_result, pipeline, logger, alert_state)
             _show_windows(frame, alert_state)
 
             if cv2.waitKey(1) & 0xFF == 27:
@@ -119,12 +120,13 @@ def _show_windows(frame, alert_state):
     cv2.imshow(WINDOW_NAME, resize_to_window(frame, WINDOW_NAME))
 
     if alert_state.is_active():
-        cv2.imshow(
-            ALERT_WINDOW_NAME,
-            resize_to_window(alert_state.alert_frame, ALERT_WINDOW_NAME),
-        )
+        ensure_alert_window()
+        alert_frame = render_alert_frame(alert_state)
+        if alert_frame is not None:
+            cv2.imshow(
+                ALERT_WINDOW_NAME,
+                resize_to_window(alert_frame, ALERT_WINDOW_NAME),
+            )
         return
 
-    alert_state.clear_if_expired()
-    if alert_state.alert_frame is None:
-        destroy_window_if_exists(ALERT_WINDOW_NAME)
+    destroy_window_if_exists(ALERT_WINDOW_NAME)
