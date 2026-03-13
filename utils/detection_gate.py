@@ -11,6 +11,7 @@ class DetectionGate:
         self.cooldown_frames = cooldown_frames
         self.histories = {}
         self.cooldowns = {}
+        self.last_qualified = {}
 
     def update(self, detections):
 
@@ -32,13 +33,17 @@ class DetectionGate:
             prev = qualified.get(label)
             if prev is None or confidence > prev["confidence"]:
                 qualified[label] = det
+                self.last_qualified[label] = det
 
         for label in set(self.histories) | set(qualified):
             history = self.histories.setdefault(label, deque(maxlen=self.window_size))
             history.append(1 if label in qualified else 0)
 
             if sum(history) >= self.required_hits and self.cooldowns.get(label, 0) == 0:
-                triggered.append(qualified[label])
+                det = qualified.get(label) or self.last_qualified.get(label)
+                if det is None:
+                    continue
+                triggered.append(det)
                 self.cooldowns[label] = self.cooldown_frames
                 history.clear()
 
