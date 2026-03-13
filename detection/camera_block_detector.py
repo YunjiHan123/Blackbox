@@ -132,13 +132,15 @@ class CameraBlockDetector:
                 score += 1
                 reasons.append("camera_motion")
 
-            is_candidate = score >= 2 and block_signals >= 1
+            # Treat camera blocking as a sustained loss of visual detail, not a
+            # transient scene change. Require multiple block-specific signals.
+            is_candidate = score >= 3 and block_signals >= 2
             if is_candidate:
                 self.consecutive_hits += 1
             else:
                 self.consecutive_hits = 0
 
-            if score > 0:
+            if is_candidate or self.consecutive_hits > 0:
 
                 now = time.time() if timestamp is None else timestamp
 
