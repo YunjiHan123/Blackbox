@@ -133,8 +133,10 @@ class CameraBlockDetector:
                 reasons.append("camera_motion")
 
             # Treat camera blocking as a sustained loss of visual detail, not a
-            # transient scene change. Require multiple block-specific signals.
-            is_candidate = score >= 3 and block_signals >= 2
+            # transient scene change. Require multiple block-specific signals and
+            # at least one strong visual degradation cue.
+            strong_block_signal = brightness < self.min_brightness or pixel_std < self.min_pixel_std
+            is_candidate = score >= 2 and block_signals >= 2 and strong_block_signal
             if is_candidate:
                 self.consecutive_hits += 1
             else:
