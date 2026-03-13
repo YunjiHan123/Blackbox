@@ -24,6 +24,7 @@ RESULT_HOLD_MS = 800
 SKIP_KEY = ord("s")
 SUMMARY_PLOT_PATH = ROOT / "test_data" / "summary_metrics.png"
 ASYNC_PLAYBACK = True
+EVAL_PERSON_NEAR_HEAD_AREA_THRESHOLD = 0.18
 
 IMPLEMENTED_WARNINGS = {
     EVENT_WEAPON,
@@ -40,7 +41,12 @@ class EvaluationRuntime:
         pass
 
     def create_pipeline(self):
-        return create_pipeline()
+        pipeline = create_pipeline()
+        # Make face-near overlays more likely in evaluation videos.
+        pipeline["person_proximity_detector"].head_area_threshold = (
+            EVAL_PERSON_NEAR_HEAD_AREA_THRESHOLD
+        )
+        return pipeline
 
 
 def load_dataset(labels_path=LABELS_PATH):
