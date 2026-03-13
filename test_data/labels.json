@@ -1,25 +1,25 @@
 {
   "videos": [
     {
-      "file": "door_lock_manipulation_1.MOV",
+      "file": "1.MOV",
       "expected_warnings": [
         "door_lock_manipulation", "weapon", "face_near"
       ]
     },
     {
-      "file": "door_lock_manipulation_2.MOV",
+      "file": "2.MOV",
       "expected_warnings": [
         "door_lock_manipulation", "camera_block", "face_near"
       ]
     },
     {
-      "file": "door_lock_manipulation_3.MOV",
+      "file": "3.MOV",
       "expected_warnings": [
         "weapon", "camera_block", "face_near"
       ]
     },
     {
-      "file": "door_lock_manipulation_4.MOV",
+      "file": "4.MOV",
       "expected_warnings": [
         "door_lock_manipulation", "weapon", "camera_block"
       ]
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "file": "6.MOV",
+      "file": "6.mov",
       "expected_warnings": [
         "loitering", "weapon", "camera_block"
       ]
