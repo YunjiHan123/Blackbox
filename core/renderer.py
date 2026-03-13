@@ -121,8 +121,11 @@ def _render_block_overlay(frame, block_event):
     if block_event is None:
         return
 
+    if not block_event["triggered"]:
+        return
+
     metrics = block_event["metrics"]
-    label = "BLOCKED" if block_event["triggered"] else "BLOCK RISK"
+    label = "BLOCKED"
     cv2.putText(
         frame,
         (
