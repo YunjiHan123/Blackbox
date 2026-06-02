@@ -1,0 +1,29 @@
+EVENT_DOOR_LOCK_MANIPULATION = "door_lock_manipulation"
+EVENT_WEAPON = "weapon"
+EVENT_CAMERA_BLOCK = "camera_block"
+EVENT_FACE_NEAR = "face_near"
+EVENT_LOITERING = "loitering"
+
+EVENT_LABELS = {
+    EVENT_DOOR_LOCK_MANIPULATION: "문고리 및 도어락 조작 시도",
+    EVENT_WEAPON: "무기",
+    EVENT_CAMERA_BLOCK: "카메라 가림",
+    EVENT_FACE_NEAR: "얼굴가까이 대기",
+    EVENT_LOITERING: "배회",
+}
+
+EVENT_ALERT_TITLES = {
+    EVENT_DOOR_LOCK_MANIPULATION: "ALERT  DOOR LOCK MANIPULATION",
+    EVENT_WEAPON: "ALERT  WEAPON DETECTED",
+    EVENT_CAMERA_BLOCK: "ALERT  CAMERA BLOCKING",
+    EVENT_FACE_NEAR: "ALERT  FACE NEAR CAMERA",
+    EVENT_LOITERING: "ALERT  LOITERING DETECTED",
+}
+
+
+def get_event_label(event_type: str) -> str:
+    return EVENT_LABELS.get(event_type, event_type)
+
+
+def get_event_alert_title(event_type: str) -> str:
+    return EVENT_ALERT_TITLES.get(event_type, event_type.upper())

@@ -3,13 +3,22 @@ import cv2
 
 class CameraStream:
 
-    def __init__(self, camera_index, frame_width, frame_height, rotation=None, buffer_size=None):
+    def __init__(
+        self,
+        camera_index,
+        frame_width,
+        frame_height,
+        rotation=None,
+        buffer_size=None,
+        mirror=False,
+    ):
 
         self.camera_index = camera_index
         self.frame_width = frame_width
         self.frame_height = frame_height
         self.rotation = rotation
         self.buffer_size = buffer_size
+        self.mirror = mirror
         self.cap = None
 
     def open(self):
@@ -40,6 +49,9 @@ class CameraStream:
         if self.rotation is not None:
             frame = cv2.rotate(frame, self.rotation)
 
+        if self.mirror:
+            frame = cv2.flip(frame, 1)
+
         return True, frame
 
     def release(self):
@@ -50,8 +62,10 @@ class CameraStream:
 
 
 def resize_to_window(frame, window_name):
-
-    _, _, window_width, window_height = cv2.getWindowImageRect(window_name)
+    try:
+        _, _, window_width, window_height = cv2.getWindowImageRect(window_name)
+    except cv2.error:
+        return frame
 
     if window_width <= 0 or window_height <= 0:
         return frame

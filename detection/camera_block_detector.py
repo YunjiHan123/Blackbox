@@ -3,6 +3,8 @@ import time
 import cv2
 import numpy as np
 
+from core.event_types import EVENT_CAMERA_BLOCK
+
 
 class CameraBlockDetector:
 
@@ -11,15 +13,28 @@ class CameraBlockDetector:
         change_ratio_threshold=0.35,
         min_brightness=40.0,
         min_pixel_std=15.0,
+        min_texture=50.0,
+        min_edge_ratio=0.02,
+        hist_threshold=0.4,
+        flow_threshold=2.0,
+        required_consecutive_frames=4,
         capture_interval_seconds=1.0,
     ):
 
         self.change_ratio_threshold = change_ratio_threshold
         self.min_brightness = min_brightness
         self.min_pixel_std = min_pixel_std
+        self.min_texture = min_texture
+        self.min_edge_ratio = min_edge_ratio
+        self.hist_threshold = hist_threshold
+        self.flow_threshold = flow_threshold
+        self.required_consecutive_frames = required_consecutive_frames
         self.capture_interval_seconds = capture_interval_seconds
         self.prev_gray = None
         self.last_capture_time = 0.0
+        self.prev_hist = None
+        self.prev_gray_small = None
+        self.consecutive_hits = 0
 
     def analyze(self, frame, timestamp=None):
 
@@ -35,32 +50,130 @@ class CameraBlockDetector:
             brightness = float(np.mean(gray))
             pixel_std = float(np.std(gray))
 
+            lap = cv2.Laplacian(gray, cv2.CV_64F)
+            texture_var = lap.var()
+
+            edges = cv2.Canny(gray, 50, 150)
+            edge_ratio = np.sum(edges > 0) / edges.size
+
+            hist = cv2.calcHist([frame],[0,1,2],None,[8,8,8],[0,256,0,256,0,256])
+            hist = cv2.normalize(hist, hist).flatten()
+
+            hist_change = 0
+
+            if self.prev_hist is not None:
+                hist_change = cv2.compareHist(
+                    self.prev_hist,
+                    hist,
+                    cv2.HISTCMP_BHATTACHARYYA
+                )
+
+            self.prev_hist = hist
+
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            saturation = np.mean(hsv[:,:,1])
+
+            gray_small = cv2.resize(gray, (160,120))
+
+            flow_mag = 0
+
+            if self.prev_gray_small is not None:
+                flow = cv2.calcOpticalFlowFarneback(
+                    self.prev_gray_small,
+                    gray_small,
+                    None,
+                    0.5,
+                    3,
+                    15,
+                    3,
+                    5,
+                    1.2,
+                    0
+                )
+
+                mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+                flow_mag = np.mean(mag)
+
+            self.prev_gray_small = gray_small
+
+            score = 0
             reasons = []
+            block_signals = 0
 
             if change_ratio > self.change_ratio_threshold:
+                score += 1
                 reasons.append("sudden_change")
+
             if brightness < self.min_brightness:
+                score += 1
                 reasons.append("dark_frame")
+                block_signals += 1
+
             if pixel_std < self.min_pixel_std:
+                score += 1
+                reasons.append("low_pixel_std")
+                block_signals += 1
+
+            if texture_var < self.min_texture:
+                score += 1
                 reasons.append("low_texture")
+                block_signals += 1
 
-            if reasons:
+            if edge_ratio < self.min_edge_ratio:
+                score += 1
+                reasons.append("low_edges")
+                block_signals += 1
+
+            if hist_change > self.hist_threshold:
+                score += 1
+                reasons.append("color_distribution_change")
+
+            if flow_mag > self.flow_threshold:
+                score += 1
+                reasons.append("camera_motion")
+
+            # Treat camera blocking as a sustained loss of visual detail, not a
+            # transient scene change. Require multiple block-specific signals and
+            # at least one strong visual degradation cue.
+            strong_block_signal = brightness < self.min_brightness or pixel_std < self.min_pixel_std
+            is_candidate = score >= 2 and block_signals >= 2 and strong_block_signal
+            if is_candidate:
+                self.consecutive_hits += 1
+            else:
+                self.consecutive_hits = 0
+
+            if is_candidate or self.consecutive_hits > 0:
+
                 now = time.time() if timestamp is None else timestamp
-                should_capture = now - self.last_capture_time > self.capture_interval_seconds
 
-                if should_capture:
+                should_capture = (
+                    now - self.last_capture_time
+                    > self.capture_interval_seconds
+                )
+
+                triggered = self.consecutive_hits >= self.required_consecutive_frames
+
+                if triggered and should_capture:
                     self.last_capture_time = now
 
                 event = {
-                    "class_name": "camera_blocking",
-                    "confidence": 1.0,
+                    "class_name": EVENT_CAMERA_BLOCK,
+                    "confidence": min(1.0, score / 4.0),
                     "reasons": reasons,
                     "metrics": {
                         "change_ratio": change_ratio,
                         "brightness": brightness,
                         "pixel_std": pixel_std,
+                        "texture_var": float(texture_var),
+                        "edge_ratio": float(edge_ratio),
+                        "hist_change": float(hist_change),
+                        "flow_mag": float(flow_mag),
                     },
-                    "should_capture": should_capture,
+                    "score": score,
+                    "candidate": is_candidate,
+                    "triggered": triggered,
+                    "consecutive_hits": self.consecutive_hits,
+                    "should_capture": triggered and should_capture,
                 }
 
         self.prev_gray = gray
